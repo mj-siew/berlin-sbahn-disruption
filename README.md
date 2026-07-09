@@ -37,6 +37,17 @@ This writes:
 
 - `data/vbb_sbahn_tagesspiegel_crosscheck_2025.json`
 
+Build the final shareable HTML report and written conclusion:
+
+```powershell
+py scripts/build_final_report.py
+```
+
+This writes:
+
+- `reports/berlin_sbahn_reliability_trend.html`
+- `reports/berlin_sbahn_reliability_conclusion.md`
+
 Run the parser tests:
 
 ```powershell
