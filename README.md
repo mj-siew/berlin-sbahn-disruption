@@ -15,6 +15,17 @@ This also writes chart-ready monthly trend views for 2023-2026:
 - `data/vbb_sbahn_monthly_line_trends_2023_2026.csv`
 - `data/vbb_sbahn_monthly_trend_notes_2023_2026.json`
 
+Build the curated event-annotation layer for chart markers and source-backed caveats:
+
+```powershell
+py scripts/build_vbb_sbahn_event_annotations.py
+```
+
+This writes:
+
+- `data/vbb_sbahn_event_annotations_2023_2026.csv`
+- `data/vbb_sbahn_event_annotation_sources_2023_2026.json`
+
 Run the parser tests:
 
 ```powershell

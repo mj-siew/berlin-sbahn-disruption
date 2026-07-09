@@ -1,0 +1,293 @@
+{
+  "generated_at": "2026-07-09T21:12:52+00:00",
+  "analysis_window": {
+    "start_period": "2023-01",
+    "end_period": "2026-12"
+  },
+  "columns": [
+    "event_id",
+    "event_family",
+    "context_type",
+    "event_title",
+    "annotation_kind",
+    "start_date",
+    "end_date",
+    "start_period",
+    "end_period",
+    "chart_date",
+    "impact_scope",
+    "affected_lines",
+    "confidence_level",
+    "chart_label",
+    "summary",
+    "context_note",
+    "causal_caveat",
+    "source_count"
+  ],
+  "event_count": 8,
+  "family_notes": {
+    "wollankstrasse_closure": "Planned disruption context from bridge works around S Wollankstrasse.",
+    "signal_or_stellwerk_failure": "Operational disruption context from signal, signal-box, or staffing failures.",
+    "cable_theft": "Operational disruption context from vandalism or cable theft."
+  },
+  "events": [
+    {
+      "event_id": "cable_theft_landsberger_allee_2024_12",
+      "event_family": "cable_theft",
+      "context_type": "operational_incident_context",
+      "event_title": "Cable theft disrupts Ring and radial services near Landsberger Allee",
+      "annotation_kind": "point",
+      "start_date": "2024-12-13",
+      "end_date": "2024-12-13",
+      "start_period": "2024-12",
+      "end_period": "2024-12",
+      "chart_date": "2024-12-13",
+      "impact_scope": "ring_east",
+      "affected_lines": "S41,S42,S8,S85",
+      "confidence_level": "high",
+      "chart_label": "Cable theft: Landsberger Allee",
+      "summary": "Cable theft forced a shuttle segment between Landsberger Allee and Frankfurter Allee and suspended the S85.",
+      "context_note": "Useful context for a sharp single-day service shock on the eastern Ring corridor in December 2024.",
+      "causal_caveat": "The event is well evidenced but short-lived, so it is only local context unless a December monthly KPI change is also visible in the primary series.",
+      "source_count": 1,
+      "sources": [
+        {
+          "title": "Beendet: S-Bahn-Pendelverkehr zwischen Landsberger Allee und Frankfurter Allee",
+          "url": "https://viz.berlin.de/aktuelle-meldungen/aktuell-zugverkehr-s41-s42-s8-und-s85-zwischen-landsberger-allee-und-frankfurter-allee-unterbrochen/",
+          "publisher": "VIZ Berlin",
+          "published_date": "2024-12-13",
+          "note": "Archived disruption notice naming cable theft and affected lines."
+        }
+      ]
+    },
+    {
+      "event_id": "wollankstrasse_full_closure_2025_03",
+      "event_family": "wollankstrasse_closure",
+      "context_type": "planned_disruption_context",
+      "event_title": "Full Wollankstrasse bridge-work closure in March 2025",
+      "annotation_kind": "range",
+      "start_date": "2025-03-03",
+      "end_date": "2025-03-28",
+      "start_period": "2025-03",
+      "end_period": "2025-03",
+      "chart_date": "2025-03-03",
+      "impact_scope": "north_south_north",
+      "affected_lines": "S1,S8,S25,S26,S85",
+      "confidence_level": "high",
+      "chart_label": "Wollankstrasse full closure",
+      "summary": "Bridge-replacement work around S Wollankstrasse rerouted multiple north-south services through most of March 2025.",
+      "context_note": "This is strong planned disruption context for the northern north-south corridor during March 2025.",
+      "causal_caveat": "The closure clearly changed operations locally, but it should annotate the chart rather than be treated as proof of a network-wide KPI change.",
+      "source_count": 1,
+      "sources": [
+        {
+          "title": "Vollsperrung der Wollankstrasse in Hoehe S-Bahnhof",
+          "url": "https://viz.berlin.de/aktuelle-meldungen/neubau-der-bruecke-uber-die-wollankstrasse/",
+          "publisher": "VIZ Berlin",
+          "published_date": "2025-03-03",
+          "note": "Official Berlin traffic notice with exact road-closure window and S-Bahn rerouting summary."
+        }
+      ]
+    },
+    {
+      "event_id": "cable_theft_humboldthain_2025_04",
+      "event_family": "cable_theft",
+      "context_type": "operational_incident_context",
+      "event_title": "Cable theft near Humboldthain interrupts the north-south corridor",
+      "annotation_kind": "range",
+      "start_date": "2025-04-25",
+      "end_date": "2025-04-27",
+      "start_period": "2025-04",
+      "end_period": "2025-04",
+      "chart_date": "2025-04-25",
+      "impact_scope": "north_south_centre_north",
+      "affected_lines": "S1,S2,S25,S26,S85",
+      "confidence_level": "high",
+      "chart_label": "Cable theft: Humboldthain",
+      "summary": "Unknown offenders cut and partly stole cables near Humboldthain, interrupting traffic between Nordbahnhof and Gesundbrunnen.",
+      "context_note": "This is a directly evidenced cable-theft event on the north-south trunk late in April 2025.",
+      "causal_caveat": "This event is appropriate as chart context, but any monthly interpretation should note that a separate Stellwerk defect was also reported in the same corridor on April 26.",
+      "source_count": 2,
+      "sources": [
+        {
+          "title": "Beeintraechtigung durch Vandalismus (Kabeldiebstahl) im Bereich Humboldthain bis 27.04.25",
+          "url": "https://viz.berlin.de/aktuelle-meldungen/beeintrachtigung-durch-vandalismus-kabeldiebstahl-im-bereich-humboldthain/",
+          "publisher": "VIZ Berlin",
+          "published_date": "2025-04-25",
+          "note": "Official disruption notice with affected lines and repair horizon."
+        },
+        {
+          "title": "Stellwerkstoerung fuehrt weiter zu Einschraenkungen bei der S-Bahn",
+          "url": "https://www.rbb24.de/panorama/beitrag/2025/04/berlin-s-bahn-kabeldiebstahl-behoben-stellwerkstoerung-verkehr-einschraenkungen.html",
+          "publisher": "rbb24",
+          "published_date": "2025-04-26",
+          "note": "Follow-up report confirming the cable damage and its overlap with a separate Stellwerk problem."
+        }
+      ]
+    },
+    {
+      "event_id": "stellwerk_gesundbrunnen_2025_04",
+      "event_family": "signal_or_stellwerk_failure",
+      "context_type": "operational_incident_context",
+      "event_title": "Stellwerk defect at Gesundbrunnen after the Humboldthain disruption",
+      "annotation_kind": "point",
+      "start_date": "2025-04-26",
+      "end_date": "2025-04-26",
+      "start_period": "2025-04",
+      "end_period": "2025-04",
+      "chart_date": "2025-04-26",
+      "impact_scope": "north_south_centre_north",
+      "affected_lines": "S1,S2,S25,S26",
+      "confidence_level": "medium",
+      "chart_label": "Stellwerk defect: Gesundbrunnen",
+      "summary": "A reported Stellwerk defect around Gesundbrunnen continued to disrupt the north-south corridor on April 26, 2025.",
+      "context_note": "This event shows that short operational failures can compound corridor stress even after a cable-theft repair.",
+      "causal_caveat": "Treat this as weaker monthly context because it was short-lived and overlapped with the nearby Humboldthain cable-damage event.",
+      "source_count": 1,
+      "sources": [
+        {
+          "title": "Stellwerkstoerung fuehrt weiter zu Einschraenkungen bei der S-Bahn",
+          "url": "https://www.rbb24.de/panorama/beitrag/2025/04/berlin-s-bahn-kabeldiebstahl-behoben-stellwerkstoerung-verkehr-einschraenkungen.html",
+          "publisher": "rbb24",
+          "published_date": "2025-04-26",
+          "note": "Report citing a Stellwerk defect in the Gesundbrunnen area."
+        }
+      ]
+    },
+    {
+      "event_id": "wollankstrasse_pfingsten_2025_06",
+      "event_family": "wollankstrasse_closure",
+      "context_type": "planned_disruption_context",
+      "event_title": "Pfingsten Wollankstrasse works interrupt the S1 corridor",
+      "annotation_kind": "range",
+      "start_date": "2025-06-06",
+      "end_date": "2025-06-11",
+      "start_period": "2025-06",
+      "end_period": "2025-06",
+      "chart_date": "2025-06-06",
+      "impact_scope": "north_south_north",
+      "affected_lines": "S1,S8,S25,S26,S85",
+      "confidence_level": "high",
+      "chart_label": "Wollankstrasse Pfingsten works",
+      "summary": "Bridge and track work over the Pfingsten weekend interrupted the S1 and reduced corridor frequency around Wollankstrasse.",
+      "context_note": "This is a second strong planned-disruption marker for the same corridor in June 2025.",
+      "causal_caveat": "Useful timeline context for June 2025, but still explanatory rather than causal evidence for any KPI inflection.",
+      "source_count": 1,
+      "sources": [
+        {
+          "title": "Brueckenbaustelle Wollankstrasse beeinflusst S-Bahnverkehr ueber Pfingsten",
+          "url": "https://sbahn.berlin/das-unternehmen/presse/pressemitteilungen-pressearchiv/pressemitteilungen/brueckenbaustelle-wollankstrasse-beeinflusst-s-bahnverkehr-ueber-pfingsten/",
+          "publisher": "S-Bahn Berlin",
+          "published_date": "2025-05-27",
+          "note": "Official press release with exact service window and affected lines."
+        }
+      ]
+    },
+    {
+      "event_id": "stellwerk_schoeneweide_personalausfall_2025_07",
+      "event_family": "signal_or_stellwerk_failure",
+      "context_type": "operational_incident_context",
+      "event_title": "Staffing failure at the Schoeneweide signal box disrupts the southeast",
+      "annotation_kind": "range",
+      "start_date": "2025-07-19",
+      "end_date": "2025-07-20",
+      "start_period": "2025-07",
+      "end_period": "2025-07",
+      "chart_date": "2025-07-19",
+      "impact_scope": "southeast",
+      "affected_lines": "S45,S46,S47,S8,S85,S9",
+      "confidence_level": "high",
+      "chart_label": "Schoeneweide Stellwerk outage",
+      "summary": "A sickness-related staffing failure left the Schoeneweide Stellwerk unoccupied for much of the weekend, forcing bus replacement and a shuttle.",
+      "context_note": "This is a well-documented southeast corridor disruption tied to a manually staffed Stellwerk.",
+      "causal_caveat": "The event is meaningful operational context, but its root cause was a local staffing shortage rather than a proven infrastructure defect trend.",
+      "source_count": 2,
+      "sources": [
+        {
+          "title": "S-Bahn-Linien im Berliner Suedosten fahren nach Personalmangel im Stellwerk wieder",
+          "url": "https://www.rbb24.de/panorama/beitrag/2025/07/s-bahn-berlin-plaenterwald-baumschulenweg-schoeneweide-unterbrochen.html",
+          "publisher": "rbb24",
+          "published_date": "2025-07-20",
+          "note": "Contemporary report with dates, affected lines, and operator quote."
+        },
+        {
+          "title": "Warum Stellwerke so sensibel fuer den Berliner S-Bahn-Betrieb sind",
+          "url": "https://www.rbb24.de/panorama/beitrag/2025/07/stellwerk-berlin-sbahn-personal-ausfall-verkehr-bahn.html",
+          "publisher": "rbb24",
+          "published_date": "2025-07-21",
+          "note": "Explainer confirming the southeast corridor still depended on manually staffed Stellwerke in 2025."
+        }
+      ]
+    },
+    {
+      "event_id": "stellwerk_schoeneweide_personalausfall_2025_08",
+      "event_family": "signal_or_stellwerk_failure",
+      "context_type": "operational_incident_context",
+      "event_title": "Repeat Schoeneweide signal-box staffing outage in August 2025",
+      "annotation_kind": "point",
+      "start_date": "2025-08-03",
+      "end_date": "2025-08-03",
+      "start_period": "2025-08",
+      "end_period": "2025-08",
+      "chart_date": "2025-08-03",
+      "impact_scope": "southeast",
+      "affected_lines": "S41,S42,S45,S46,S47,S8",
+      "confidence_level": "medium",
+      "chart_label": "Repeat Schoeneweide outage",
+      "summary": "A second short-notice staffing failure at the Schoeneweide Stellwerk caused renewed southeast and Ring-related disruption.",
+      "context_note": "This repeated outage strengthens the case that Schoeneweide was an important fragility point during summer 2025.",
+      "causal_caveat": "This is plausible context for August 2025, but it remains a short single-day event and should not be over-read without corroborating KPI movement.",
+      "source_count": 1,
+      "sources": [
+        {
+          "title": "Berliner S-Bahn gestoert: Stellwerk in Schoeneweide faellt erneut wegen Personalmangel aus",
+          "url": "https://www.rbb24.de/panorama/beitrag/2025/08/berlin-stoerung-sbahn-stellwerk-schoeneweide-personalausfall.html",
+          "publisher": "rbb24",
+          "published_date": "2025-08-03",
+          "note": "Report documenting the repeat outage and affected lines."
+        }
+      ]
+    },
+    {
+      "event_id": "cable_theft_baumschulenweg_2026_05",
+      "event_family": "cable_theft",
+      "context_type": "operational_incident_context",
+      "event_title": "Cable theft at Baumschulenweg disrupts southeast services",
+      "annotation_kind": "range",
+      "start_date": "2026-05-19",
+      "end_date": "2026-05-20",
+      "start_period": "2026-05",
+      "end_period": "2026-05",
+      "chart_date": "2026-05-19",
+      "impact_scope": "southeast",
+      "affected_lines": "S46,S47,S8,S85,S9",
+      "confidence_level": "high",
+      "chart_label": "Cable theft: Baumschulenweg",
+      "summary": "Cable theft at Baumschulenweg caused a multi-line southeast disruption that lasted from Tuesday morning until repairs finished on Wednesday.",
+      "context_note": "This is one of the clearer cable-theft markers in the 2026 trend window.",
+      "causal_caveat": "The event is well evidenced and lasted into a second day, but it still belongs in the exploratory annotation layer rather than as standalone proof of a monthly KPI shift.",
+      "source_count": 2,
+      "sources": [
+        {
+          "title": "Kriminalitaet: Kabeldiebstahl in Treptow - Stoerungen bei der S-Bahn",
+          "url": "https://www.tagesspiegel.de/berlin/kriminalitat-kabeldiebstahl-in-treptow-storungen-bei-der-s-bahn-15610269.html",
+          "publisher": "Tagesspiegel / dpa",
+          "published_date": "2026-05-19",
+          "note": "Early report placing the disruption in the Tuesday-morning commute."
+        },
+        {
+          "title": "Nach einem Kabeldiebstahl fahren S-Bahnen wieder planmaessig",
+          "url": "https://www.rbb24.de/panorama/beitrag/2026/05/kabeldiebstahl-berlin-sbahn-baumschulenweg-einschraenkungen.html",
+          "publisher": "rbb24",
+          "published_date": "2026-05-20",
+          "note": "Follow-up report confirming restoration by Wednesday midday."
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "Annotations are interpretive context for KPI charts, not a replacement for the VBB primary evidence layer.",
+    "Confidence levels reflect source quality and date precision, not proof of causal impact on monthly KPI values.",
+    "Short incidents can be meaningful chart markers while still being too weak to explain a monthly network trend on their own."
+  ]
+}
