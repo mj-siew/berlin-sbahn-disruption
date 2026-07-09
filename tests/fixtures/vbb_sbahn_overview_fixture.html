@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="de">
+  <body>
+    <form id="rqfilterform" action="/qualitaet-im-oepnv/qualitaet-berliner-s-bahn/?tx_sbahnqualitaet_sbahnoverview%5Baction%5D=list" method="post">
+      <input type="hidden" name="tx_sbahnqualitaet_sbahnoverview[__trustedProperties]" value="fixture" />
+      <select id="year" name="tx_sbahnqualitaet_sbahnoverview[year]">
+        <option value="2026" selected="selected">2026</option>
+        <option value="2025">2025</option>
+      </select>
+      <select id="month" name="tx_sbahnqualitaet_sbahnoverview[month]">
+        <option value="13">Gesamtjahr</option>
+        <option value="2" selected="selected">Februar</option>
+        <option value="1">Januar</option>
+      </select>
+    </form>
+
+    <div id="data-container-P0" data-dataset='{"punctuality":[70.1,71.234,"-"]}'></div>
+    <div id="data-container-P3" data-dataset='{"punctuality":[93.2,94.345,"-"]}'></div>
+    <div id="data-container-ZG" data-dataset='{"reliability":[95,96.2,"-"]}'></div>
+
+    <div id="datatable">
+      <form class="tablerow table-body-row"
+        title="Details anzeigen von::
+Linie S1
+Jahr: 2026, Monat 2"
+        data-overallranking="97.29"
+        data-punctuality="96.46"
+        data-reliability="98.11">
+      </form>
+      <form class="tablerow table-body-row"
+        title="Details anzeigen von::
+Linie S2
+Jahr: 2026, Monat 2"
+        data-overallranking="96.91"
+        data-punctuality="95.58"
+        data-reliability="98.24">
+      </form>
+    </div>
+  </body>
+</html>

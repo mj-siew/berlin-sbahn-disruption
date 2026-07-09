@@ -1,0 +1,163 @@
+{
+  "generated_at": "2026-07-09T20:29:05+00:00",
+  "source_urls": {
+    "primary_quality_tool": "https://unternehmen.vbb.de/qualitaet-im-oepnv/qualitaet-berliner-s-bahn/",
+    "quality_archive": "https://unternehmen.vbb.de/qualitaet-im-oepnv/qualitaetsbilanzen/"
+  },
+  "row_count": 4509,
+  "columns": [
+    "period",
+    "year",
+    "month",
+    "entity_scope",
+    "entity_id",
+    "metric_id",
+    "value_percent",
+    "comparability_class",
+    "source_artifact",
+    "source_url",
+    "extracted_at",
+    "notes"
+  ],
+  "years": [
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025,
+    2026
+  ],
+  "months_by_year": {
+    "2019": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "2020": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "2021": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "2022": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "2023": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "2024": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "2025": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "2026": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  "source_artifacts": [
+    {
+      "name": "VBB Berlin S-Bahn quality tool",
+      "role": "primary evidence layer for 2019 onward monthly KPI values",
+      "access_method": "TYPO3 filter form plus embedded chart and table attributes"
+    },
+    {
+      "name": "VBB quality archive",
+      "role": "older backfill or sensitivity source only; not merged into this dataset",
+      "access_method": "PDF and ZIP links on the VBB quality archive page"
+    }
+  ],
+  "metric_definitions": {
+    "punctuality_p3": "Share of arrivals no more than 3:59 minutes late.",
+    "punctuality_p0": "Share of arrivals no more than 0:59 minutes late.",
+    "reliability_zg": "Delivered train-km divided by scheduled train-km on the day-current timetable.",
+    "overall_ranking": "VBB line comparison score combining punctuality and reliability."
+  },
+  "notes": [
+    "Month option 13, Gesamtjahr, is intentionally skipped to keep this file monthly.",
+    "Future or unavailable months represented by '-' in the VBB chart data are omitted.",
+    "Network punctuality_p3 and reliability_zg are the headline primary evidence series.",
+    "Line values are drilldown evidence and should not replace the network headline series."
+  ]
+}
