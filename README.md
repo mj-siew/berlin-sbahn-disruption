@@ -26,6 +26,17 @@ This writes:
 - `data/vbb_sbahn_event_annotations_2023_2026.csv`
 - `data/vbb_sbahn_event_annotation_sources_2023_2026.json`
 
+Build the Tagesspiegel 2025 comparison note that cross-checks external reporting against
+the repo's KPI definitions:
+
+```powershell
+py scripts/build_vbb_sbahn_tagesspiegel_crosscheck.py
+```
+
+This writes:
+
+- `data/vbb_sbahn_tagesspiegel_crosscheck_2025.json`
+
 Run the parser tests:
 
 ```powershell

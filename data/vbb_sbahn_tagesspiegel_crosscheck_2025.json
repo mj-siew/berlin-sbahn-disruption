@@ -1,0 +1,156 @@
+{
+  "comparison_id": "tagesspiegel_2025_kpi_crosscheck",
+  "generated_at": "2026-07-09T21:22:56+00:00",
+  "project_metric_reference": {
+    "source_csv": "data/vbb_sbahn_monthly_network_trends_2023_2026.csv",
+    "entity_scope": "network",
+    "headline_metrics": [
+      "punctuality_p3",
+      "reliability_zg"
+    ],
+    "metric_definitions": {
+      "punctuality_p3": "Share of arrivals no more than 3:59 minutes late.",
+      "reliability_zg": "Delivered train-km divided by scheduled train-km on the day-current timetable."
+    },
+    "method_note": "Derived comparison figures use equal-weight averages of the published monthly VBB network percentages because this repo does not store the underlying train-count or train-km weights needed for an exact annual re-aggregation."
+  },
+  "source_chain": {
+    "secondary_reporting": [
+      {
+        "title": "Lage hat sich 2025 verschaerft: 135.298 Zuege kamen zu spaet - die Berliner S-Bahn wird immer unzuverlaessiger",
+        "url": "https://www.tagesspiegel.de/berlin/lage-hat-sich-2025-verscharft-135298-zuge-kamen-zu-spat--die-berliner-s-bahn-wird-immer-unzuverlassiger-15087045.html",
+        "publisher": "Tagesspiegel",
+        "published_date": "2025-12-30",
+        "access_role": "secondary_reporting",
+        "note": "Reports Jan-Sep 2025 punctuality at 92.9%, 29,390 cancelled trains, and 34,414 operational disruptions from an S-Bahn report to the Berlin parliament."
+      },
+      {
+        "title": "Schon wieder Stoerung im Betriebsablauf? Wo die Berliner S-Bahn am haeufigsten aus dem Takt geraet",
+        "url": "https://interaktiv.tagesspiegel.de/lab/schon-wieder-stoerung-im-betriebsablauf-wo-die-berliner-s-bahn-am-haeufigsten-aus-dem-takt-geraet/",
+        "publisher": "Tagesspiegel",
+        "published_date": "2026-06-17",
+        "access_role": "secondary_reporting",
+        "note": "States that 7.1% of trains arrived more than four minutes late in 2025, about 6% fell out, about 46,000 disruptions were recorded in 2025, and Tagesspiegel's filtered rider-facing notice sample contained 831 notices from 2025-12-01 through 2026-04-30."
+      }
+    ],
+    "public_primary_sources": [
+      {
+        "title": "Projektbericht Qualitaetsoffensive S-Bahn Plus fuer das zweite und dritte Quartal 2025",
+        "url": "https://www.parlament-berlin.de/adosservice/19/Haupt/vorgang/h19-0054.J-v.pdf",
+        "publisher": "Abgeordnetenhaus Berlin / SenUMVK",
+        "published_date": "2025-11-20",
+        "access_role": "public_primary_source",
+        "note": "Public PDF trace for the Jan-Sep 2025 figures: 92.9% punctuality, a 5.28% operational cancellation-km rate, and 34,414 operational disruptions."
+      },
+      {
+        "title": "Projektbericht Qualitaetsoffensive S-Bahn Plus fuer das vierte Quartal 2025 und das erste Quartal 2026",
+        "url": "https://www.parlament-berlin.de/adosservice/19/Haupt/vorgang/h19-0054.K-v.pdf",
+        "publisher": "Abgeordnetenhaus Berlin / SenUMVK",
+        "published_date": "2026-05-26",
+        "access_role": "public_primary_source",
+        "note": "Explains that the report's disruption count records every operational irregularity once, regardless of duration or impact, which matters for metric comparability."
+      }
+    ],
+    "traceability_note": "The Jan-Sep 2025 figures trace cleanly to the public parliamentary PDF. The calendar-year 2025 7.1%-late and roughly-6%-cancelled figures appear in Tagesspiegel's June 17, 2026 interactive and cite 'S-Bahn Berlin (2026)', but the underlying annual source is not linked directly in that article."
+  },
+  "claim_checks": [
+    {
+      "claim_id": "tagesspiegel_2025_late_trains_share",
+      "reported_period": "2025-01 to 2025-12",
+      "reported_value": "7.1% of trains arrived more than four minutes late",
+      "source_reference": "https://interaktiv.tagesspiegel.de/lab/schon-wieder-stoerung-im-betriebsablauf-wo-die-berliner-s-bahn-am-haeufigsten-aus-dem-takt-geraet/",
+      "project_derived_value": "7.057% inverse of monthly punctuality_p3 (7.1% rounded; 92.943% on time)",
+      "comparison_validity": "approximate",
+      "alignment": "aligns",
+      "explanation": "This is the closest valid comparison because both figures describe whole-network trains missing the 3:59 punctuality threshold. It is still approximate because the repo only stores monthly percentages, not the weights required to reproduce an exact annual aggregate."
+    },
+    {
+      "claim_id": "tagesspiegel_2025_cancelled_trains_share",
+      "reported_period": "2025-01 to 2025-12",
+      "reported_value": "about 6% of trains fell out",
+      "source_reference": "https://interaktiv.tagesspiegel.de/lab/schon-wieder-stoerung-im-betriebsablauf-wo-die-berliner-s-bahn-am-haeufigsten-aus-dem-takt-geraet/",
+      "project_derived_value": "6.053% inverse of monthly reliability_zg (6.1% rounded)",
+      "comparison_validity": "not_direct",
+      "alignment": "directionally_similar_but_metric_mismatched",
+      "explanation": "The repo's reliability metric is delivered train-km over scheduled train-km, while a cancelled-train share uses train runs as the unit. The percentages are numerically close, but they should not be treated as an exact match."
+    },
+    {
+      "claim_id": "tagesspiegel_jan_sep_2025_punctuality",
+      "reported_period": "2025-01 to 2025-09",
+      "reported_value": "92.9% on time in the first nine months of 2025",
+      "source_reference": "https://www.tagesspiegel.de/berlin/lage-hat-sich-2025-verscharft-135298-zuge-kamen-zu-spat--die-berliner-s-bahn-wird-immer-unzuverlassiger-15087045.html",
+      "project_derived_value": "92.817% equal-weight monthly average (7.183% more than four minutes late)",
+      "comparison_validity": "approximate",
+      "alignment": "aligns",
+      "explanation": "This is the cleanest overlap between the repo's KPI layer and a public primary-source chain. The threshold and network scope match, but the repo still lacks the weights needed for a mathematically exact Jan-Sep annualization."
+    },
+    {
+      "claim_id": "tagesspiegel_jan_sep_2025_disruptions",
+      "reported_period": "2025-01 to 2025-09",
+      "reported_value": "34,414 operational disruptions",
+      "source_reference": "https://www.parlament-berlin.de/adosservice/19/Haupt/vorgang/h19-0054.J-v.pdf",
+      "project_derived_value": "No direct analogue in the repo's KPI layer; the closest separate metric is the 6.350% inverse of Jan-Sep network reliability_zg.",
+      "comparison_validity": "not_direct",
+      "alignment": "cannot_compare_directly",
+      "explanation": "The repo tracks monthly KPI percentages and a curated annotation layer, not the full operational incident log. The parliamentary report counts each operational irregularity once, regardless of duration or impact."
+    },
+    {
+      "claim_id": "issue_target_900_plus_disruptions",
+      "reported_period": "issue target claim without article/date attached",
+      "reported_value": "900+ disruptions",
+      "source_reference": "https://interaktiv.tagesspiegel.de/lab/schon-wieder-stoerung-im-betriebsablauf-wo-die-berliner-s-bahn-am-haeufigsten-aus-dem-takt-geraet/",
+      "project_derived_value": "Closest located Tagesspiegel figures were about 46,000 disruptions for calendar 2025, 34,414 operational disruptions for Jan-Sep 2025, and 831 rider-facing website notices for 2025-12-01 to 2026-04-30.",
+      "comparison_validity": "not_verified",
+      "alignment": "cannot_compare_directly",
+      "explanation": "A bare 900+ figure could not be confirmed as the 2025 annual disruption count in the located sources. The available Tagesspiegel reporting uses multiple disruption concepts with different periods and filters, so the narrative should cite the exact article and date instead of a floating count."
+    }
+  ],
+  "supporting_period_summaries": {
+    "annual_2025": {
+      "punctuality_p3": {
+        "metric_id": "punctuality_p3",
+        "start_period": "2025-01",
+        "end_period": "2025-12",
+        "month_count": 12,
+        "average_percent": "92.943",
+        "inverse_percent": "7.057",
+        "rounded_inverse_percent": "7.1"
+      },
+      "reliability_zg": {
+        "metric_id": "reliability_zg",
+        "start_period": "2025-01",
+        "end_period": "2025-12",
+        "month_count": 12,
+        "average_percent": "93.947",
+        "inverse_percent": "6.053",
+        "rounded_inverse_percent": "6.1"
+      }
+    },
+    "jan_to_sep_2025": {
+      "punctuality_p3": {
+        "metric_id": "punctuality_p3",
+        "start_period": "2025-01",
+        "end_period": "2025-09",
+        "month_count": 9,
+        "average_percent": "92.817",
+        "inverse_percent": "7.183",
+        "rounded_inverse_percent": "7.2"
+      },
+      "reliability_zg": {
+        "metric_id": "reliability_zg",
+        "start_period": "2025-01",
+        "end_period": "2025-09",
+        "month_count": 9,
+        "average_percent": "93.650",
+        "inverse_percent": "6.350",
+        "rounded_inverse_percent": "6.4"
+      }
+    }
+  },
+  "comparison_note": {
+    "verdict": "mixed_comparability",
+    "alignment_statement": "The repo's headline KPI trend aligns with Tagesspiegel's 2025 punctuality reporting at an approximate level.",
+    "non_alignment_statement": "Disruption counts do not compare directly to the repo's KPI series, and the located Tagesspiegel coverage uses at least three different count concepts: 34,414 operational disruptions (Jan-Sep 2025), about 46,000 disruptions (calendar 2025), and 831 rider-facing notices (2025-12-01 to 2026-04-30).",
+    "narrative_safe_use": "It is safe to say that external reporting supports the repo's story that 2025 punctuality deteriorated materially, but any comparison to disruption-count reporting must be framed as a separate incident-count lens rather than the same KPI."
+  }
+}
