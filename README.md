@@ -9,6 +9,12 @@ Build the normalized 2019 onward VBB Berlin S-Bahn KPI dataset:
 py scripts/build_vbb_sbahn_dataset.py
 ```
 
+This also writes chart-ready monthly trend views for 2023-2026:
+
+- `data/vbb_sbahn_monthly_network_trends_2023_2026.csv`
+- `data/vbb_sbahn_monthly_line_trends_2023_2026.csv`
+- `data/vbb_sbahn_monthly_trend_notes_2023_2026.json`
+
 Run the parser tests:
 
 ```powershell

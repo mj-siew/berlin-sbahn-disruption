@@ -5,6 +5,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from build_vbb_sbahn_dataset import (  # noqa: E402
     DEFAULT_SOURCE_URL,
+    KpiRow,
+    aggregate_monthly_rows,
     parse_filter_config,
     parse_line_rows,
     parse_network_rows,
@@ -67,3 +69,77 @@ def test_parse_line_rows_emits_drilldown_metrics() -> None:
         "reliability_zg": "98.11",
     }
     assert {row.comparability_class for row in rows} == {"primary_drilldown"}
+
+
+def test_aggregate_monthly_rows_filters_range_and_preserves_monthly_values() -> None:
+    rows = [
+        KpiRow(
+            period="2022-12",
+            year=2022,
+            month=12,
+            entity_scope="network",
+            entity_id="Gesamtnetz",
+            metric_id="punctuality_p3",
+            value_percent="95.00",
+            comparability_class="primary_headline",
+            source_artifact="VBB Berlin S-Bahn quality tool",
+            source_url=DEFAULT_SOURCE_URL,
+            extracted_at=EXTRACTED_AT,
+            notes="Network punctuality, arrivals no more than 3:59 minutes late.",
+        ),
+        KpiRow(
+            period="2023-01",
+            year=2023,
+            month=1,
+            entity_scope="network",
+            entity_id="Gesamtnetz",
+            metric_id="punctuality_p3",
+            value_percent="96.10",
+            comparability_class="primary_headline",
+            source_artifact="VBB Berlin S-Bahn quality tool",
+            source_url=DEFAULT_SOURCE_URL,
+            extracted_at=EXTRACTED_AT,
+            notes="Network punctuality, arrivals no more than 3:59 minutes late.",
+        ),
+        KpiRow(
+            period="2023-01",
+            year=2023,
+            month=1,
+            entity_scope="line",
+            entity_id="S1",
+            metric_id="reliability_zg",
+            value_percent="97.20",
+            comparability_class="primary_drilldown",
+            source_artifact="VBB Berlin S-Bahn quality tool",
+            source_url=DEFAULT_SOURCE_URL,
+            extracted_at=EXTRACTED_AT,
+            notes="Line reliability, delivered train-km over scheduled train-km.",
+        ),
+        KpiRow(
+            period="2026-05",
+            year=2026,
+            month=5,
+            entity_scope="line",
+            entity_id="S1",
+            metric_id="overall_ranking",
+            value_percent="98.40",
+            comparability_class="primary_drilldown",
+            source_artifact="VBB Berlin S-Bahn quality tool",
+            source_url=DEFAULT_SOURCE_URL,
+            extracted_at=EXTRACTED_AT,
+            notes="Line overall score published by VBB for comparison.",
+        ),
+    ]
+
+    monthly_rows = aggregate_monthly_rows(rows)
+
+    assert [(row.period, row.entity_scope, row.metric_id) for row in monthly_rows] == [
+        ("2023-01", "network", "punctuality_p3"),
+        ("2023-01", "line", "reliability_zg"),
+        ("2026-05", "line", "overall_ranking"),
+    ]
+    assert [row.value_percent for row in monthly_rows] == ["96.10", "97.20", "98.40"]
+    assert {row.coverage_status for row in monthly_rows} == {"observed"}
+    assert monthly_rows[0].metric_definition == (
+        "Share of arrivals no more than 3:59 minutes late."
+    )

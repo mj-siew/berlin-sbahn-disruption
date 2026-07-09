@@ -1,0 +1,53 @@
+{
+  "view": "monthly_trends",
+  "period_range": {
+    "start": "2023-01",
+    "end": "2026-12",
+    "observed_until": "2026-05"
+  },
+  "row_count": 2076,
+  "columns": [
+    "period",
+    "year",
+    "month",
+    "entity_scope",
+    "entity_id",
+    "metric_id",
+    "value_percent",
+    "comparability_class",
+    "coverage_status",
+    "metric_definition",
+    "source_artifact",
+    "source_url",
+    "extracted_at",
+    "notes"
+  ],
+  "headline_metrics": [
+    "punctuality_p3",
+    "reliability_zg"
+  ],
+  "entity_views": {
+    "network": "Whole-network monthly KPI view for headline descriptive trend work.",
+    "line": "Line-level monthly KPI view for drilldowns and supporting comparisons."
+  },
+  "metric_definitions": {
+    "punctuality_p3": "Share of arrivals no more than 3:59 minutes late.",
+    "punctuality_p0": "Share of arrivals no more than 0:59 minutes late.",
+    "reliability_zg": "Delivered train-km divided by scheduled train-km on the day-current timetable.",
+    "overall_ranking": "VBB line comparison score combining punctuality and reliability."
+  },
+  "assumptions": [
+    "Monthly trend rows preserve the published VBB monthly KPI values without interpolation or quartering.",
+    "Whole-network punctuality_p3 and reliability_zg remain the headline primary evidence series.",
+    "Line-level values remain drilldown evidence and should not replace the whole-network headline series."
+  ],
+  "exclusions": [
+    "Pre-2023 monthly rows are excluded from this chart-ready trend window.",
+    "Pre-2019 VBB archive material is not merged into this view because compatibility is not yet proven.",
+    "Future or unavailable months omitted by the source remain absent instead of being backfilled."
+  ],
+  "coverage_gaps": [
+    "The requested range runs through 2026-12, but the current observed data ends at 2026-05.",
+    "Coverage status is 'observed' for published months only; missing future months are described here rather than synthesized into placeholder rows."
+  ]
+}

@@ -38,10 +38,40 @@ CSV_FIELDS = [
     "notes",
 ]
 
+MONTHLY_TREND_FIELDS = [
+    "period",
+    "year",
+    "month",
+    "entity_scope",
+    "entity_id",
+    "metric_id",
+    "value_percent",
+    "comparability_class",
+    "coverage_status",
+    "metric_definition",
+    "source_artifact",
+    "source_url",
+    "extracted_at",
+    "notes",
+]
+
+MONTHLY_TREND_START = "2023-01"
+MONTHLY_TREND_END = "2026-12"
+MONTHLY_NETWORK_OUTPUT = Path("data/vbb_sbahn_monthly_network_trends_2023_2026.csv")
+MONTHLY_LINE_OUTPUT = Path("data/vbb_sbahn_monthly_line_trends_2023_2026.csv")
+MONTHLY_NOTES_OUTPUT = Path("data/vbb_sbahn_monthly_trend_notes_2023_2026.json")
+
 LINE_TITLE_RE = re.compile(
     r"Linie\s+(?P<line>.+?)\s+Jahr:\s+(?P<year>\d{4}),\s+Monat\s+(?P<month>\d{1,2})",
     re.DOTALL,
 )
+
+METRIC_DEFINITIONS = {
+    "punctuality_p3": "Share of arrivals no more than 3:59 minutes late.",
+    "punctuality_p0": "Share of arrivals no more than 0:59 minutes late.",
+    "reliability_zg": "Delivered train-km divided by scheduled train-km on the day-current timetable.",
+    "overall_ranking": "VBB line comparison score combining punctuality and reliability.",
+}
 
 
 @dataclass(frozen=True)
@@ -62,6 +92,24 @@ class KpiRow:
     metric_id: str
     value_percent: str
     comparability_class: str
+    source_artifact: str
+    source_url: str
+    extracted_at: str
+    notes: str
+
+
+@dataclass(frozen=True)
+class MonthlyTrendRow:
+    period: str
+    year: int
+    month: int
+    entity_scope: str
+    entity_id: str
+    metric_id: str
+    value_percent: str
+    comparability_class: str
+    coverage_status: str
+    metric_definition: str
     source_artifact: str
     source_url: str
     extracted_at: str
@@ -333,6 +381,52 @@ def sort_rows(rows: Iterable[KpiRow]) -> list[KpiRow]:
     )
 
 
+def aggregate_monthly_rows(
+    rows: Iterable[KpiRow],
+    *,
+    start_period: str = MONTHLY_TREND_START,
+    end_period: str = MONTHLY_TREND_END,
+) -> list[MonthlyTrendRow]:
+    monthly_rows: list[MonthlyTrendRow] = []
+
+    for row in sort_rows(rows):
+        if row.period < start_period or row.period > end_period:
+            continue
+        monthly_rows.append(
+            MonthlyTrendRow(
+                period=row.period,
+                year=row.year,
+                month=row.month,
+                entity_scope=row.entity_scope,
+                entity_id=row.entity_id,
+                metric_id=row.metric_id,
+                value_percent=row.value_percent,
+                comparability_class=row.comparability_class,
+                coverage_status="observed",
+                metric_definition=METRIC_DEFINITIONS.get(row.metric_id, ""),
+                source_artifact=row.source_artifact,
+                source_url=row.source_url,
+                extracted_at=row.extracted_at,
+                notes=row.notes,
+            )
+        )
+
+    return monthly_rows
+
+
+def split_monthly_rows(
+    rows: Iterable[MonthlyTrendRow],
+) -> tuple[list[MonthlyTrendRow], list[MonthlyTrendRow]]:
+    network_rows: list[MonthlyTrendRow] = []
+    line_rows: list[MonthlyTrendRow] = []
+    for row in rows:
+        if row.entity_scope == "network":
+            network_rows.append(row)
+        elif row.entity_scope == "line":
+            line_rows.append(row)
+    return network_rows, line_rows
+
+
 def build_dataset(source_url: str = DEFAULT_SOURCE_URL) -> tuple[list[KpiRow], dict[str, object]]:
     extracted_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
     session = requests.Session()
@@ -412,10 +506,7 @@ def build_metadata(
             },
         ],
         "metric_definitions": {
-            "punctuality_p3": "Share of arrivals no more than 3:59 minutes late.",
-            "punctuality_p0": "Share of arrivals no more than 0:59 minutes late.",
-            "reliability_zg": "Delivered train-km divided by scheduled train-km on the day-current timetable.",
-            "overall_ranking": "VBB line comparison score combining punctuality and reliability.",
+            **METRIC_DEFINITIONS,
         },
         "notes": [
             "Month option 13, Gesamtjahr, is intentionally skipped to keep this file monthly.",
@@ -426,10 +517,65 @@ def build_metadata(
     }
 
 
+def build_monthly_trend_notes(
+    *,
+    rows: list[MonthlyTrendRow],
+    source_metadata: dict[str, object],
+    start_period: str = MONTHLY_TREND_START,
+    end_period: str = MONTHLY_TREND_END,
+) -> dict[str, object]:
+    observed_periods = sorted({row.period for row in rows})
+    observed_until = observed_periods[-1] if observed_periods else None
+
+    return {
+        "view": "monthly_trends",
+        "period_range": {
+            "start": start_period,
+            "end": end_period,
+            "observed_until": observed_until,
+        },
+        "row_count": len(rows),
+        "columns": MONTHLY_TREND_FIELDS,
+        "headline_metrics": ["punctuality_p3", "reliability_zg"],
+        "entity_views": {
+            "network": "Whole-network monthly KPI view for headline descriptive trend work.",
+            "line": "Line-level monthly KPI view for drilldowns and supporting comparisons.",
+        },
+        "metric_definitions": source_metadata["metric_definitions"],
+        "assumptions": [
+            "Monthly trend rows preserve the published VBB monthly KPI values without interpolation or quartering.",
+            "Whole-network punctuality_p3 and reliability_zg remain the headline primary evidence series.",
+            "Line-level values remain drilldown evidence and should not replace the whole-network headline series.",
+        ],
+        "exclusions": [
+            "Pre-2023 monthly rows are excluded from this chart-ready trend window.",
+            "Pre-2019 VBB archive material is not merged into this view because compatibility is not yet proven.",
+            "Future or unavailable months omitted by the source remain absent instead of being backfilled.",
+        ],
+        "coverage_gaps": [
+            (
+                f"The requested range runs through {end_period}, but the current observed data ends at {observed_until}."
+                if observed_until is not None
+                else f"The requested range runs through {end_period}, but no observed monthly rows were available."
+            ),
+            "Coverage status is 'observed' for published months only; missing future months are described here rather than synthesized into placeholder rows.",
+        ],
+    }
+
+
 def write_csv(rows: Iterable[KpiRow], output_path: Path) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=CSV_FIELDS)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(asdict(row))
+
+
+def write_monthly_csv(rows: Iterable[MonthlyTrendRow], output_path: Path) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=MONTHLY_TREND_FIELDS)
         writer.writeheader()
         for row in rows:
             writer.writerow(asdict(row))
@@ -457,16 +603,46 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=Path("data/vbb_sbahn_quality_sources.json"),
     )
+    parser.add_argument(
+        "--monthly-network-csv",
+        type=Path,
+        default=MONTHLY_NETWORK_OUTPUT,
+    )
+    parser.add_argument(
+        "--monthly-line-csv",
+        type=Path,
+        default=MONTHLY_LINE_OUTPUT,
+    )
+    parser.add_argument(
+        "--monthly-notes-json",
+        type=Path,
+        default=MONTHLY_NOTES_OUTPUT,
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
     rows, metadata = build_dataset(source_url=args.source_url)
+    monthly_rows = aggregate_monthly_rows(rows)
+    monthly_network_rows, monthly_line_rows = split_monthly_rows(monthly_rows)
+    monthly_notes = build_monthly_trend_notes(rows=monthly_rows, source_metadata=metadata)
     write_csv(rows, args.output_csv)
     write_json(metadata, args.metadata_json)
+    write_monthly_csv(monthly_network_rows, args.monthly_network_csv)
+    write_monthly_csv(monthly_line_rows, args.monthly_line_csv)
+    write_json(monthly_notes, args.monthly_notes_json)
     print(f"Wrote {len(rows)} rows to {args.output_csv}")
     print(f"Wrote source metadata to {args.metadata_json}")
+    print(
+        f"Wrote {len(monthly_network_rows)} network monthly trend rows to "
+        f"{args.monthly_network_csv}"
+    )
+    print(
+        f"Wrote {len(monthly_line_rows)} line monthly trend rows to "
+        f"{args.monthly_line_csv}"
+    )
+    print(f"Wrote monthly trend notes to {args.monthly_notes_json}")
 
 
 if __name__ == "__main__":
