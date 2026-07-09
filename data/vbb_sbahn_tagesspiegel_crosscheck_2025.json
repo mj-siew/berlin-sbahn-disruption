@@ -1,6 +1,6 @@
 {
   "comparison_id": "tagesspiegel_2025_kpi_crosscheck",
-  "generated_at": "2026-07-09T21:22:56+00:00",
+  "generated_at": "2026-07-09T21:35:05+00:00",
   "project_metric_reference": {
     "source_csv": "data/vbb_sbahn_monthly_network_trends_2023_2026.csv",
     "entity_scope": "network",
