@@ -3,7 +3,10 @@ Analysing train disruption trends in Berlin S-Bahn
 
 ## Findings at a glance
 
-The VBB series shows a clear split: reliability recovered after 2024, but punctuality remains the persistent weakness, with 2025 the weakest complete year. On my route, S25 is mainly an on-time problem while S26 is mainly a delivery problem; the charts below show the evidence.
+After 2025's low point, the network is clawing back ground:
+- Jan-May 2026 punctuality reached **94.14%** (**+0.90 pp** vs 2025),
+- Jan-May 2026 reliability reached **94.99%** (**+0.92 pp**).
+- On my route, S25 is mainly an on-time problem while S26 is mainly a delivery problem; the charts below show why.
 
    ![Annual network KPI divergence](reports/assets/annual_network_divergence.svg)
 

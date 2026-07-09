@@ -169,3 +169,5 @@ def test_standalone_svg_embeds_its_chart_styles() -> None:
 
     assert "<style>" in svg
     assert ".annual-punctuality" in svg
+    assert 'xmlns="http://www.w3.org/2000/svg"' in svg
+    assert svg.startswith('<?xml version="1.0" encoding="UTF-8"?>')

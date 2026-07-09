@@ -1787,7 +1787,20 @@ STANDALONE_SVG_STYLE = """
 
 def standalone_svg(svg: str) -> str:
     """Embed the small stylesheet needed when a report chart is viewed alone."""
-    return svg.replace("</svg>", f"<style>{STANDALONE_SVG_STYLE}</style></svg>")
+    if svg.startswith("<svg>"):
+        svg = svg.replace(
+            "<svg>",
+            '<svg xmlns="http://www.w3.org/2000/svg">',
+            1,
+        )
+    else:
+        svg = svg.replace(
+            "<svg ",
+            '<svg xmlns="http://www.w3.org/2000/svg" ',
+            1,
+        )
+    svg = svg.replace("</svg>", f"<style>{STANDALONE_SVG_STYLE}</style></svg>")
+    return f'<?xml version="1.0" encoding="UTF-8"?>\n{svg}'
 
 
 def parse_args() -> argparse.Namespace:
