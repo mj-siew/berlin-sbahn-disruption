@@ -20,6 +20,7 @@ DEFAULT_NOTES_JSON = Path("data/vbb_sbahn_monthly_trend_notes_2023_2026.json")
 DEFAULT_SOURCES_JSON = Path("data/vbb_sbahn_quality_sources.json")
 DEFAULT_HTML_OUTPUT = Path("reports/berlin_sbahn_reliability_trend.html")
 DEFAULT_MARKDOWN_OUTPUT = Path("reports/berlin_sbahn_reliability_conclusion.md")
+DEFAULT_ASSET_DIR = Path("reports/assets")
 
 HEADLINE_METRICS = ("punctuality_p3", "reliability_zg")
 LINE_BASELINE_YEAR = 2023
@@ -1761,6 +1762,34 @@ def write_text(path: Path, contents: str) -> None:
     path.write_text(contents, encoding="utf-8")
 
 
+STANDALONE_SVG_STYLE = """
+.svg-kicker { fill: #138a70; font: 800 11px Aptos, Segoe UI, sans-serif; letter-spacing: 1.5px; }
+.svg-legend, .svg-caption { fill: #627487; font: 600 12px Aptos, Segoe UI, sans-serif; }
+.svg-panel-title { fill: #102a43; font: 800 17px Aptos, Segoe UI, sans-serif; }
+.svg-axis, .svg-year, .svg-axis-label { fill: #627487; font: 600 11px Aptos, Segoe UI, sans-serif; }
+.svg-year { fill: #102a43; font-size: 12px; font-weight: 800; }
+.svg-axis-label { fill: #102a43; font-size: 12px; }
+.grid-line { stroke: #e8e3d8; stroke-width: 1; }
+.annual-punctuality, .annual-reliability { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }
+.annual-punctuality { stroke: #0f766e; }
+.annual-reliability { stroke: #1d4ed8; }
+.annual-ytd { stroke-dasharray: 7 6; }
+.route-network, .route-s25, .route-s26 { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }
+.route-network { stroke: #627487; stroke-dasharray: 7 6; }
+.route-s25 { stroke: #d6654b; }
+.route-s26 { stroke: #138a70; }
+.route-point { stroke: #fbfaf6; stroke-width: 2; }
+.route-point.route-network { fill: #fbfaf6; }
+.route-point.route-s25 { fill: #d6654b; }
+.route-point.route-s26 { fill: #138a70; }
+"""
+
+
+def standalone_svg(svg: str) -> str:
+    """Embed the small stylesheet needed when a report chart is viewed alone."""
+    return svg.replace("</svg>", f"<style>{STANDALONE_SVG_STYLE}</style></svg>")
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Build the final offline HTML report for Berlin S-Bahn reliability trends."
@@ -1779,6 +1808,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sources-json", type=Path, default=DEFAULT_SOURCES_JSON)
     parser.add_argument("--output-html", type=Path, default=DEFAULT_HTML_OUTPUT)
     parser.add_argument("--output-markdown", type=Path, default=DEFAULT_MARKDOWN_OUTPUT)
+    parser.add_argument("--asset-dir", type=Path, default=DEFAULT_ASSET_DIR)
     return parser.parse_args()
 
 
@@ -1835,8 +1865,17 @@ def main() -> None:
 
     write_text(args.output_html, html_output)
     write_text(args.output_markdown, markdown_output)
+    write_text(
+        args.asset_dir / "annual_network_divergence.svg",
+        standalone_svg(annual_svg),
+    )
+    write_text(
+        args.asset_dir / "s25_s26_route_comparison.svg",
+        standalone_svg(route_svg),
+    )
     print(f"Wrote offline HTML report to {args.output_html}")
     print(f"Wrote written conclusion to {args.output_markdown}")
+    print(f"Wrote README chart assets to {args.asset_dir}")
 
 
 if __name__ == "__main__":

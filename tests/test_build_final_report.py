@@ -14,6 +14,7 @@ from build_final_report import (  # noqa: E402
     load_annotation_rows,
     load_metric_rows,
     render_html,
+    standalone_svg,
 )
 
 
@@ -161,3 +162,10 @@ def test_event_legend_exposes_loaded_context_without_hovering_chart_markers() ->
     assert "Cable theft: Landsberger Allee" in legend
     assert "S41, S42, S8, S85" in legend
     assert "Wollankstrasse full closure" in legend
+
+
+def test_standalone_svg_embeds_its_chart_styles() -> None:
+    svg = standalone_svg("<svg><path class='annual-punctuality'/></svg>")
+
+    assert "<style>" in svg
+    assert ".annual-punctuality" in svg
