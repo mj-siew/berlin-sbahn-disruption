@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 from dataclasses import dataclass
 from html import escape
 from pathlib import Path
@@ -20,10 +21,8 @@ DEFAULT_HTML_OUTPUT = Path("reports/berlin_sbahn_reliability_trend.html")
 DEFAULT_MARKDOWN_OUTPUT = Path("reports/berlin_sbahn_reliability_conclusion.md")
 
 HEADLINE_METRICS = ("punctuality_p3", "reliability_zg")
-FULL_YEAR_YEARS = (2023, 2024, 2025)
 LINE_BASELINE_YEAR = 2023
 LINE_COMPARISON_YEAR = 2025
-TARGET_PERCENT = 96.0
 
 METRIC_LABELS = {
     "punctuality_p3": "Punctuality <= 3:59 late",
@@ -291,8 +290,18 @@ def summarize_window(
 
 
 def build_full_year_summaries(network_rows: list[MetricRow]) -> tuple[MetricWindowSummary, ...]:
+    complete_years = sorted(
+        {
+            row.year
+            for row in network_rows
+            if all(
+                len(metric_rows_for(network_rows, metric_id=metric_id, year=row.year)) == 12
+                for metric_id in HEADLINE_METRICS
+            )
+        }
+    )
     summaries: list[MetricWindowSummary] = []
-    for year in FULL_YEAR_YEARS:
+    for year in complete_years:
         for metric_id in HEADLINE_METRICS:
             summaries.append(
                 summarize_window(
@@ -437,8 +446,9 @@ def build_report_summary(
     reliability_2023 = summary_lookup[("reliability_zg", "2023")].value_percent
     reliability_2024 = summary_lookup[("reliability_zg", "2024")].value_percent
     reliability_2025 = summary_lookup[("reliability_zg", "2025")].value_percent
-    punctuality_2026_ytd = ytd_lookup[("punctuality_p3", f"{latest_year} YTD (Jan-{month_label(latest_month)})")].value_percent
-    reliability_2026_ytd = ytd_lookup[("reliability_zg", f"{latest_year} YTD (Jan-{month_label(latest_month)})")].value_percent
+    latest_ytd_label = f"{latest_year} YTD (Jan-{month_label(latest_month)})"
+    punctuality_latest_ytd = ytd_lookup[("punctuality_p3", latest_ytd_label)].value_percent
+    reliability_latest_ytd = ytd_lookup[("reliability_zg", latest_ytd_label)].value_percent
 
     worst_reliability_month = min(
         metric_rows_for(network_rows, metric_id="reliability_zg"),
@@ -465,9 +475,9 @@ def build_report_summary(
         f"across the whole window: 2024 was dragged down by a severe January low at "
         f"{worst_reliability_month.value_percent:.2f}%, 2025 recovered close to the "
         f"2023 full-year level ({reliability_2025:.2f}% versus {reliability_2023:.2f}%), "
-        f"and the observed 2026 year-to-date window through {observed_until} is stronger "
-        f"on both headline metrics ({punctuality_2026_ytd:.2f}% punctuality, "
-        f"{reliability_2026_ytd:.2f}% reliability)."
+        f"and the observed {latest_year} year-to-date window through {observed_until} is stronger "
+        f"on both headline metrics ({punctuality_latest_ytd:.2f}% punctuality, "
+        f"{reliability_latest_ytd:.2f}% reliability)."
     )
 
     key_findings = (
@@ -522,249 +532,207 @@ def build_report_summary(
     )
 
 
-def rolling_average(values: list[float], window: int = 3) -> list[float]:
-    averages: list[float] = []
-    for index in range(len(values)):
-        start = max(0, index - window + 1)
-        slice_values = values[start : index + 1]
-        averages.append(mean(slice_values))
-    return averages
+def _svg_x(index: int, count: int, left: float, width: float) -> float:
+    return left if count <= 1 else left + (index / (count - 1)) * width
 
 
-def build_network_figure(network_rows: list[MetricRow], annotations: list[AnnotationRow]):
-    import plotly.graph_objects as go
-    from plotly.subplots import make_subplots
+def _svg_y(value: float, domain: tuple[float, float], top: float, height: float) -> float:
+    lower, upper = domain
+    return top + height - ((value - lower) / (upper - lower)) * height
 
-    figure = make_subplots(
-        rows=2,
-        cols=1,
-        shared_xaxes=True,
-        vertical_spacing=0.08,
-        subplot_titles=(
-            "Whole-network punctuality",
-            "Whole-network reliability",
-        ),
+
+def _svg_path(points: list[tuple[float, float]]) -> str:
+    return " ".join(
+        f"{'M' if index == 0 else 'L'} {x:.1f} {y:.1f}"
+        for index, (x, y) in enumerate(points)
     )
 
-    for row_number, metric_id in enumerate(HEADLINE_METRICS, start=1):
+
+def build_network_svg(network_rows: list[MetricRow], annotations: list[AnnotationRow]) -> str:
+    periods = sorted({row.period for row in network_rows})
+    width = 1080
+    height = 520
+    left = 78
+    right = 28
+    plot_width = width - left - right
+    panel_height = 150
+    panel_tops = (82, 302)
+    metric_domains = {
+        "punctuality_p3": (89.0, 97.0),
+        "reliability_zg": (74.0, 98.0),
+    }
+    metric_titles = {
+        "punctuality_p3": "Punctuality",
+        "reliability_zg": "Reliability",
+    }
+    metric_subtitles = {
+        "punctuality_p3": "arrivals within 3:59 minutes",
+        "reliability_zg": "train-km delivered vs scheduled",
+    }
+    period_index = {period: index for index, period in enumerate(periods)}
+    step = plot_width / max(len(periods) - 1, 1)
+    parts = [
+        (
+            f'<svg class="chart-svg network-svg" viewBox="0 0 {width} {height}" '
+            'role="img" aria-labelledby="network-chart-title network-chart-desc" '
+            'preserveAspectRatio="xMidYMid meet">'
+        ),
+        '<title id="network-chart-title">Whole-network monthly KPI trend</title>',
+        '<desc id="network-chart-desc">Monthly punctuality and reliability from January 2023 through the latest observed month. The 2025 and 2026 year-to-date periods are shaded for comparison.</desc>',
+        '<rect width="100%" height="100%" rx="18" fill="#fbfaf6"/>',
+        '<text x="78" y="30" class="svg-kicker">WHOLE-NETWORK PULSE</text>',
+        '<line x1="285" y1="25" x2="315" y2="25" class="legend-line"/>',
+        '<text x="323" y="30" class="svg-legend">monthly KPI</text>',
+        '<rect x="410" y="18" width="18" height="14" rx="3" fill="#fff0df"/>',
+        '<text x="436" y="30" class="svg-legend">2025</text>',
+        '<rect x="495" y="18" width="18" height="14" rx="3" fill="#e7f5ee"/>',
+        '<text x="521" y="30" class="svg-legend">2026 Jan-May</text>',
+        '<circle cx="680" cy="25" r="4" fill="#d97706"/>',
+        '<text x="692" y="30" class="svg-legend">context event</text>',
+    ]
+
+    year_groups: dict[int, list[int]] = {}
+    for index, period in enumerate(periods):
+        year_groups.setdefault(int(period[:4]), []).append(index)
+    for year, indices in year_groups.items():
+        band_left = max(left, _svg_x(indices[0], len(periods), left, plot_width) - step / 2)
+        band_right = min(width - right, _svg_x(indices[-1], len(periods), left, plot_width) + step / 2)
+        fill = "#fff0df" if year == 2025 else "#e7f5ee" if year == max(year_groups) else "#f3f1eb"
+        parts.append(
+            f'<rect x="{band_left:.1f}" y="62" width="{band_right - band_left:.1f}" '
+            f'height="350" fill="{fill}" opacity="0.75"/>'
+        )
+
+    for metric_id, panel_top in zip(HEADLINE_METRICS, panel_tops):
+        domain = metric_domains[metric_id]
+        parts.append(
+            f'<text x="{left}" y="{panel_top - 26}" class="svg-panel-title">'
+            f'{metric_titles[metric_id]}</text>'
+        )
+        parts.append(
+            f'<text x="{left + 112}" y="{panel_top - 26}" class="svg-panel-subtitle">'
+            f'{metric_subtitles[metric_id]}</text>'
+        )
+        for tick in (90, 92, 94, 96) if metric_id == "punctuality_p3" else (76, 82, 88, 94):
+            if domain[0] <= tick <= domain[1]:
+                y = _svg_y(tick, domain, panel_top, panel_height)
+                parts.append(
+                    f'<line x1="{left}" y1="{y:.1f}" x2="{width - right}" y2="{y:.1f}" class="grid-line"/>'
+                )
+                parts.append(
+                    f'<text x="{left - 12}" y="{y + 4:.1f}" text-anchor="end" class="svg-axis">{tick}%</text>'
+                )
         metric_rows = metric_rows_for(network_rows, metric_id=metric_id)
-        x_values = [row.chart_date for row in metric_rows]
-        y_values = [row.value_percent for row in metric_rows]
-        smooth_values = rolling_average(y_values, window=3)
-        color = METRIC_COLORS[metric_id]
-
-        figure.add_trace(
-            go.Scatter(
-                x=x_values,
-                y=y_values,
-                mode="lines+markers",
-                name=f"{METRIC_LABELS[metric_id]} monthly",
-                legendgroup=metric_id,
-                line={"color": color, "width": 2},
-                marker={"size": 6},
-                hovertemplate="%{x|%b %Y}<br>%{y:.2f}%<extra></extra>",
-            ),
-            row=row_number,
-            col=1,
-        )
-        figure.add_trace(
-            go.Scatter(
-                x=x_values,
-                y=smooth_values,
-                mode="lines",
-                name=f"{METRIC_LABELS[metric_id]} 3-month average",
-                legendgroup=metric_id,
-                line={"color": color, "width": 4, "dash": "solid"},
-                opacity=0.35,
-                hovertemplate="%{x|%b %Y}<br>%{y:.2f}% rolling avg<extra></extra>",
-                showlegend=False,
-            ),
-            row=row_number,
-            col=1,
-        )
-
-        figure.add_hline(
-            y=TARGET_PERCENT,
-            line_dash="dash",
-            line_color="#64748b",
-            line_width=1,
-            row=row_number,
-            col=1,
-        )
-
-    for annotation in annotations:
-        color = ANNOTATION_COLORS.get(annotation.event_family, "#475569")
-        if annotation.annotation_kind == "range":
-            figure.add_vrect(
-                x0=annotation.start_date,
-                x1=annotation.end_date,
-                fillcolor=color,
-                opacity=0.08,
-                line_width=0,
-                row="all",
-                col=1,
+        points = [
+            (
+                _svg_x(period_index[row.period], len(periods), left, plot_width),
+                _svg_y(row.value_percent, domain, panel_top, panel_height),
             )
+            for row in metric_rows
+        ]
+        parts.append(f'<path d="{_svg_path(points)}" class="network-path"/>')
+        for row, (x, y) in zip(metric_rows, points):
+            point_class = "network-point current-point" if row.year == max(year_groups) else "network-point"
+            parts.append(
+                f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3.5" class="{point_class}">'
+                f'<title>{row.period}: {row.value_percent:.2f}%</title></circle>'
+            )
+
+    x_axis_y = panel_tops[-1] + panel_height + 24
+    for year, indices in year_groups.items():
+        x = _svg_x(indices[0], len(periods), left, plot_width)
+        if year == max(year_groups):
+            label = f"{year} Jan-{month_label(max(int(periods[index][5:]) for index in indices))}"
         else:
-            figure.add_vline(
-                x=annotation.start_date,
-                line_color=color,
-                line_dash="dot",
-                line_width=1,
-                opacity=0.65,
-                row="all",
-                col=1,
-            )
+            label = str(year)
+        parts.append(f'<text x="{x:.1f}" y="{x_axis_y}" class="svg-year">{label}</text>')
+    parts.append(f'<text x="{left}" y="{height - 28}" class="svg-axis-label">Context events</text>')
+    for annotation in annotations:
+        annotation_period = annotation.start_date[:7]
+        if annotation_period not in period_index:
+            continue
+        x = _svg_x(period_index[annotation_period], len(periods), left, plot_width)
+        color = ANNOTATION_COLORS.get(annotation.event_family, "#64748b")
+        title = f"{annotation.chart_label}: {annotation.summary}"
+        parts.append(
+            f'<circle cx="{x:.1f}" cy="{height - 33}" r="4.5" fill="{color}" class="event-point">'
+            f'<title>{escape(title)}</title></circle>'
+        )
+    parts.append("</svg>")
+    return "".join(parts)
 
-    event_y = 96.6
-    figure.add_trace(
-        go.Scatter(
-            x=[annotation.chart_position for annotation in annotations],
-            y=[event_y for _ in annotations],
-            mode="markers",
-            name="Annotated infrastructure and operating events",
-            marker={
-                "size": 10,
-                "color": [ANNOTATION_COLORS.get(annotation.event_family, "#475569") for annotation in annotations],
-                "symbol": "diamond",
-                "line": {"color": "#ffffff", "width": 1},
-            },
-            hovertemplate=(
-                "<b>%{text}</b><br>%{customdata[0]}<br>Affected lines: %{customdata[1]}"
-                "<br>%{customdata[2]}<extra></extra>"
-            ),
-            text=[annotation.chart_label for annotation in annotations],
-            customdata=[
-                [
-                    annotation.summary,
-                    ", ".join(annotation.affected_lines) or "n/a",
-                    annotation.causal_caveat,
-                ]
-                for annotation in annotations
-            ],
+
+def build_line_comparison_svg(line_deltas: tuple[LineDelta, ...]) -> str:
+    width = 1080
+    height = 570
+    panel_width = 500
+    panel_gap = 46
+    panel_lefts = (78, 78 + panel_width + panel_gap)
+    top = 92
+    row_height = 24
+    metric_titles = {
+        "punctuality_p3": "Punctuality",
+        "reliability_zg": "Reliability",
+    }
+    parts = [
+        (
+            f'<svg class="chart-svg line-svg" viewBox="0 0 {width} {height}" '
+            'role="img" aria-labelledby="line-chart-title line-chart-desc" '
+            'preserveAspectRatio="xMidYMid meet">'
         ),
-        row=1,
-        col=1,
-    )
+        '<title id="line-chart-title">Line-level KPI shifts</title>',
+        '<desc id="line-chart-desc">Change in each S-Bahn line average from 2023 to 2025, shown in percentage points. Bars left of zero indicate deterioration.</desc>',
+        '<rect width="100%" height="100%" rx="18" fill="#fbfaf6"/>',
+        '<text x="78" y="30" class="svg-kicker">LINE SHIFTS</text>',
+        f'<text x="78" y="54" class="svg-caption">{LINE_COMPARISON_YEAR} average minus {LINE_BASELINE_YEAR} average · percentage points</text>',
+        '<rect x="755" y="18" width="12" height="12" rx="2" fill="#d6654b"/>',
+        '<text x="775" y="28" class="svg-legend">lower</text>',
+        '<rect x="828" y="18" width="12" height="12" rx="2" fill="#138a70"/>',
+        '<text x="848" y="28" class="svg-legend">higher</text>',
+    ]
 
-    figure.update_yaxes(title_text="Percent", range=[89.5, 97.0], row=1, col=1)
-    figure.update_yaxes(title_text="Percent", range=[74.0, 97.5], row=2, col=1)
-    figure.update_xaxes(title_text="Month", row=2, col=1)
-    figure.update_layout(
-        title="Whole-network VBB KPI trend with curated event context",
-        template="plotly_white",
-        hovermode="x unified",
-        height=820,
-        margin={"l": 60, "r": 30, "t": 90, "b": 60},
-        legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "x": 0.0},
-    )
-    return figure
-
-
-def build_line_delta_figure(line_deltas: tuple[LineDelta, ...]):
-    import plotly.graph_objects as go
-    from plotly.subplots import make_subplots
-
-    figure = make_subplots(
-        rows=1,
-        cols=2,
-        horizontal_spacing=0.14,
-        subplot_titles=(
-            f"Punctuality change: {LINE_COMPARISON_YEAR} vs {LINE_BASELINE_YEAR}",
-            f"Reliability change: {LINE_COMPARISON_YEAR} vs {LINE_BASELINE_YEAR}",
-        ),
-    )
-
-    for column_number, metric_id in enumerate(HEADLINE_METRICS, start=1):
+    for metric_id, panel_left in zip(HEADLINE_METRICS, panel_lefts):
         metric_deltas = [delta for delta in line_deltas if delta.metric_id == metric_id]
-        y_values = [delta.entity_id for delta in metric_deltas]
+        min_delta = min(delta.delta_percent_points for delta in metric_deltas)
+        max_delta = max(delta.delta_percent_points for delta in metric_deltas)
+        lower = math.floor(min_delta - 0.5)
+        upper = math.ceil(max_delta + 0.5)
+        plot_left = panel_left + 56
+        plot_right = panel_left + panel_width - 78
+        plot_width = plot_right - plot_left
+        zero_x = plot_left + ((0 - lower) / (upper - lower)) * plot_width
+        parts.append(f'<text x="{panel_left}" y="76" class="svg-panel-title">{metric_titles[metric_id]}</text>')
+        parts.append(
+            f'<line x1="{zero_x:.1f}" y1="{top - 12}" x2="{zero_x:.1f}" '
+            f'y2="{top + row_height * len(metric_deltas) - 8}" class="zero-line"/>'
+        )
+        for index, delta in enumerate(metric_deltas):
+            y = top + index * row_height
+            end_x = plot_left + ((delta.delta_percent_points - lower) / (upper - lower)) * plot_width
+            color = "#d6654b" if delta.delta_percent_points < 0 else "#138a70"
+            label = f"{delta.delta_percent_points:+.2f} pp"
+            title = (
+                f"{delta.entity_id}: {LINE_BASELINE_YEAR} {delta.baseline_value:.2f}%, "
+                f"{LINE_COMPARISON_YEAR} {delta.comparison_value:.2f}%, {label}"
+            )
+            parts.append(
+                f'<text x="{panel_left}" y="{y + 5}" class="svg-line-label">{escape(delta.entity_id)}</text>'
+            )
+            parts.append(
+                f'<rect x="{min(zero_x, end_x):.1f}" y="{y - 6}" width="{abs(end_x - zero_x):.1f}" '
+                f'height="12" rx="6" fill="{color}" opacity="0.9"><title>{escape(title)}</title></rect>'
+            )
+            parts.append(
+                f'<text x="{panel_left + panel_width - 6}" y="{y + 5}" text-anchor="end" '
+                f'class="svg-delta {"negative" if delta.delta_percent_points < 0 else "positive"}">{label}</text>'
+            )
+        for tick in (lower, 0, upper):
+            x = plot_left + ((tick - lower) / (upper - lower)) * plot_width
+            parts.append(f'<text x="{x:.1f}" y="{top + row_height * len(metric_deltas) + 22}" text-anchor="middle" class="svg-axis">{tick:+d}</text>')
 
-        segment_x: list[float | None] = []
-        segment_y: list[str | None] = []
-        for delta in metric_deltas:
-            segment_x.extend([delta.baseline_value, delta.comparison_value, None])
-            segment_y.extend([delta.entity_id, delta.entity_id, None])
-
-        figure.add_trace(
-            go.Scatter(
-                x=segment_x,
-                y=segment_y,
-                mode="lines",
-                line={"color": "#cbd5e1", "width": 3},
-                hoverinfo="skip",
-                showlegend=False,
-            ),
-            row=1,
-            col=column_number,
-        )
-
-        figure.add_trace(
-            go.Scatter(
-                x=[delta.baseline_value for delta in metric_deltas],
-                y=y_values,
-                mode="markers",
-                name=str(LINE_BASELINE_YEAR),
-                marker={"size": 10, "color": "#94a3b8"},
-                customdata=[
-                    [delta.comparison_value, delta.delta_percent_points] for delta in metric_deltas
-                ],
-                hovertemplate=(
-                    "%{y}<br>"
-                    f"{LINE_BASELINE_YEAR}: "
-                    "%{x:.2f}%<br>"
-                    f"{LINE_COMPARISON_YEAR}: "
-                    "%{customdata[0]:.2f}%<br>"
-                    "Delta: %{customdata[1]:+.2f} pp<extra></extra>"
-                ),
-                showlegend=column_number == 1,
-            ),
-            row=1,
-            col=column_number,
-        )
-        figure.add_trace(
-            go.Scatter(
-                x=[delta.comparison_value for delta in metric_deltas],
-                y=y_values,
-                mode="markers",
-                name=str(LINE_COMPARISON_YEAR),
-                marker={"size": 10, "color": METRIC_COLORS[metric_id]},
-                customdata=[
-                    [delta.baseline_value, delta.delta_percent_points] for delta in metric_deltas
-                ],
-                hovertemplate=(
-                    "%{y}<br>"
-                    f"{LINE_BASELINE_YEAR}: "
-                    "%{customdata[0]:.2f}%<br>"
-                    f"{LINE_COMPARISON_YEAR}: "
-                    "%{x:.2f}%<br>"
-                    "Delta: %{customdata[1]:+.2f} pp<extra></extra>"
-                ),
-                showlegend=column_number == 1,
-            ),
-            row=1,
-            col=column_number,
-        )
-
-        min_value = min(
-            min(delta.baseline_value, delta.comparison_value) for delta in metric_deltas
-        )
-        max_value = max(
-            max(delta.baseline_value, delta.comparison_value) for delta in metric_deltas
-        )
-        figure.update_xaxes(
-            title_text="Percent",
-            range=[min_value - 1.0, max_value + 1.0],
-            row=1,
-            col=column_number,
-        )
-
-    figure.update_layout(
-        title="Line-level average change against the 2023 baseline",
-        template="plotly_white",
-        height=780,
-        margin={"l": 60, "r": 30, "t": 90, "b": 60},
-        legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "x": 0.0},
-    )
-    return figure
+    parts.append('<text x="78" y="546" class="svg-axis-label">Negative means the line average fell; positive means it rose.</text>')
+    parts.append("</svg>")
+    return "".join(parts)
 
 
 def build_summary_table(
