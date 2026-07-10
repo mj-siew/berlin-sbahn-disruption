@@ -29,20 +29,27 @@ LINE_COMPARISON_YEAR = 2025
 ROUTE_LINES = ("S25", "S26")
 PUNCTUALITY_REFERENCE_PERCENT = 93.0
 
+PERSONAL_ROUTE_DISTANCE_KM = 14.3
+PERSONAL_ROUTE_TRAVEL_MINUTES = 27
+PERSONAL_ROUTE_ROUND_TRIPS_PER_WEEK = 3
+PERSONAL_ROUTE_WEEKS_PER_YEAR = 46
+PERSONAL_ROUTE_WEEK_HOURS = 168
+EARTH_CIRCUMFERENCE_KM = 40_075
+
 METRIC_LABELS = {
     "punctuality_p3": "Punctuality <= 3:59 late",
     "reliability_zg": "Reliability train-km delivered",
 }
 
 METRIC_COLORS = {
-    "punctuality_p3": "#0f766e",
-    "reliability_zg": "#1d4ed8",
+    "punctuality_p3": "#138a70",
+    "reliability_zg": "#102a43",
 }
 
 ANNOTATION_COLORS = {
-    "cable_theft": "#b91c1c",
-    "signal_or_stellwerk_failure": "#7c3aed",
-    "wollankstrasse_closure": "#d97706",
+    "cable_theft": "#102a43",
+    "signal_or_stellwerk_failure": "#627487",
+    "wollankstrasse_closure": "#138a70",
 }
 
 @dataclass(frozen=True)
@@ -137,6 +144,47 @@ class RouteOverallScore:
     latest_ytd_label: str
     latest_ytd_value: float
     comparison_ytd_value: float
+
+
+@dataclass(frozen=True)
+class PersonalRouteMetrics:
+    one_way_distance_km: float
+    one_way_minutes: int
+    round_trips_per_week: int
+    weeks_per_year: int
+    one_way_journeys_per_year: int
+    annual_distance_km: float
+    annual_travel_hours: float
+    weekly_travel_hours: float
+    week_percentage: float
+    earth_circumference_percentage: float
+
+
+def build_personal_route_metrics(
+    *,
+    one_way_distance_km: float = PERSONAL_ROUTE_DISTANCE_KM,
+    one_way_minutes: int = PERSONAL_ROUTE_TRAVEL_MINUTES,
+    round_trips_per_week: int = PERSONAL_ROUTE_ROUND_TRIPS_PER_WEEK,
+    weeks_per_year: int = PERSONAL_ROUTE_WEEKS_PER_YEAR,
+    week_hours: int = PERSONAL_ROUTE_WEEK_HOURS,
+    earth_circumference_km: int = EARTH_CIRCUMFERENCE_KM,
+) -> PersonalRouteMetrics:
+    one_way_journeys_per_year = 2 * round_trips_per_week * weeks_per_year
+    annual_distance_km = one_way_distance_km * one_way_journeys_per_year
+    annual_travel_hours = one_way_minutes * one_way_journeys_per_year / 60
+    weekly_travel_hours = one_way_minutes * round_trips_per_week * 2 / 60
+    return PersonalRouteMetrics(
+        one_way_distance_km=one_way_distance_km,
+        one_way_minutes=one_way_minutes,
+        round_trips_per_week=round_trips_per_week,
+        weeks_per_year=weeks_per_year,
+        one_way_journeys_per_year=one_way_journeys_per_year,
+        annual_distance_km=annual_distance_km,
+        annual_travel_hours=annual_travel_hours,
+        weekly_travel_hours=weekly_travel_hours,
+        week_percentage=weekly_travel_hours / week_hours * 100,
+        earth_circumference_percentage=annual_distance_km / earth_circumference_km * 100,
+    )
 
 
 @dataclass(frozen=True)
@@ -723,7 +771,7 @@ def build_annual_network_svg(summary: ReportSummary) -> str:
     top = 88
     plot_height = 220
     plot_width = width - left - right
-    colors = {"punctuality_p3": "#0f766e", "reliability_zg": "#1d4ed8"}
+    colors = {"punctuality_p3": "#138a70", "reliability_zg": "#102a43"}
     labels = {"punctuality_p3": "punctuality", "reliability_zg": "reliability"}
     parts = [
         (
@@ -833,7 +881,7 @@ def build_network_svg(
         f'<text x="436" y="30" class="svg-legend">{comparison_year}</text>',
         '<rect x="495" y="18" width="18" height="14" rx="3" fill="#e7f5ee"/>',
         f'<text x="521" y="30" class="svg-legend">{latest_year} Jan-{month_label(latest_month)}</text>',
-        '<circle cx="680" cy="25" r="4" fill="#d97706"/>',
+        '<circle cx="680" cy="25" r="4" fill="#138a70"/>',
         '<text x="692" y="30" class="svg-legend">context event</text>',
     ]
 
@@ -934,7 +982,7 @@ def build_line_comparison_svg(line_deltas: tuple[LineDelta, ...]) -> str:
         '<rect width="100%" height="100%" rx="18" fill="#fbfaf6"/>',
         '<text x="78" y="30" class="svg-kicker">LINE SHIFTS</text>',
         f'<text x="78" y="54" class="svg-caption">{line_deltas[0].comparison_year} average minus {line_deltas[0].baseline_year} average - percentage points</text>',
-        '<rect x="755" y="18" width="12" height="12" rx="2" fill="#d6654b"/>',
+        '<rect x="755" y="18" width="12" height="12" rx="2" fill="#102a43"/>',
         '<text x="775" y="28" class="svg-legend">lower</text>',
         '<rect x="828" y="18" width="12" height="12" rx="2" fill="#138a70"/>',
         '<text x="848" y="28" class="svg-legend">higher</text>',
@@ -958,7 +1006,7 @@ def build_line_comparison_svg(line_deltas: tuple[LineDelta, ...]) -> str:
         for index, delta in enumerate(metric_deltas):
             y = top + index * row_height
             end_x = plot_left + ((delta.delta_percent_points - lower) / (upper - lower)) * plot_width
-            color = "#d6654b" if delta.delta_percent_points < 0 else "#138a70"
+            color = "#102a43" if delta.delta_percent_points < 0 else "#138a70"
             label = f"{delta.delta_percent_points:+.2f} pp"
             title = (
                 f"{delta.entity_id}: {delta.baseline_year} {delta.baseline_value:.2f}%, "
@@ -1437,6 +1485,7 @@ def render_html(
     }
     s25_overall = overall_lookup["S25"]
     s26_overall = overall_lookup["S26"]
+    personal_route = build_personal_route_metrics()
     caveats_html = "".join(f"<li>{escape(caveat)}</li>" for caveat in summary.caveats)
     full_year_table = build_summary_table(
         "Complete-year mean of monthly published values",
@@ -1468,8 +1517,6 @@ def render_html(
         --muted: #627487;
         --border: #d9d4c8;
         --accent: #138a70;
-        --coral: #d6654b;
-        --gold: #d97706;
       }}
       * {{ box-sizing: border-box; }}
       body {{
@@ -1499,7 +1546,7 @@ def render_html(
         border-radius: 28px;
         background:
           radial-gradient(circle at 88% 12%, rgba(205, 236, 201, 0.22), transparent 16rem),
-          linear-gradient(132deg, #102a43 0%, #153b55 65%, #126f63 100%);
+          linear-gradient(132deg, #102a43 0%, #123f3a 65%, #138a70 100%);
         box-shadow: 0 24px 60px rgba(16, 42, 67, 0.22);
       }}
       .eyebrow, .section-index {{
@@ -1555,8 +1602,8 @@ def render_html(
       .svg-axis-label {{ fill: #102a43; font-size: 12px; }}
       .svg-line-label {{ fill: #102a43; font-weight: 800; }}
       .svg-delta {{ font-weight: 800; }}
-      .svg-delta.negative {{ fill: #b74e3a; }}
-      .svg-delta.positive {{ fill: #0b745e; }}
+      .svg-delta.negative {{ fill: #102a43; }}
+      .svg-delta.positive {{ fill: #138a70; }}
       .grid-line {{ stroke: #e8e3d8; stroke-width: 1; }}
       .legend-line {{ stroke: #102a43; stroke-width: 3; }}
       .zero-line {{ stroke: #102a43; stroke-width: 1.5; }}
@@ -1564,12 +1611,12 @@ def render_html(
       .network-point {{ fill: #fbfaf6; stroke: #102a43; stroke-width: 2; }}
       .current-point {{ fill: #138a70; stroke: #fbfaf6; stroke-width: 2.5; }}
       .annual-punctuality, .annual-reliability {{ fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }}
-      .annual-punctuality {{ stroke: #0f766e; }}
-      .annual-reliability {{ stroke: #1d4ed8; }}
+      .annual-punctuality {{ stroke: #138a70; }}
+      .annual-reliability {{ stroke: #102a43; }}
       .annual-ytd {{ stroke-dasharray: 7 6; }}
       .route-network, .route-s25, .route-s26 {{ fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }}
       .route-network {{ stroke: #627487; stroke-dasharray: 7 6; }}
-      .route-s25 {{ stroke: #d6654b; }}
+      .route-s25 {{ stroke: #102a43; }}
       .route-s26 {{ stroke: #138a70; }}
       .route-point {{ stroke-width: 2; }}
       .event-point {{ stroke: #fbfaf6; stroke-width: 2; }}
@@ -1583,6 +1630,15 @@ def render_html(
       .route-card h3 {{ margin-bottom: 10px; font-size: 1.3rem; }}
       .route-card p {{ margin-bottom: 0; color: #43566a; font-size: 0.92rem; line-height: 1.5; }}
       .route-card strong {{ color: var(--ink); }}
+      .personal-route {{ margin-top: 16px; padding: 24px; border: 1px solid rgba(19, 138, 112, 0.28); border-radius: 22px; background: linear-gradient(135deg, rgba(19, 138, 112, 0.11), rgba(255, 253, 248, 0.94) 62%); }}
+      .personal-route-head {{ display: flex; justify-content: space-between; gap: 18px; align-items: end; margin-bottom: 18px; }}
+      .personal-route-head h2 {{ margin-bottom: 5px; }}
+      .personal-route-head p {{ margin-bottom: 0; color: var(--muted); font-size: 0.9rem; }}
+      .route-summary-grid {{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }}
+      .route-summary {{ padding: 15px; border-radius: 15px; background: rgba(255, 253, 248, 0.82); }}
+      .route-summary-label {{ display: block; margin-bottom: 7px; color: var(--muted); font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }}
+      .route-summary strong {{ color: var(--ink); font-size: 1.35rem; letter-spacing: -0.04em; }}
+      .route-assumption {{ margin: 16px 0 0; color: var(--muted); font-size: 0.76rem; line-height: 1.45; }}
       .event-legend {{ margin-top: 18px; padding: 16px; border: 1px solid var(--border); border-radius: 16px; background: #f7f4ec; }}
       .event-legend-heading {{ display: flex; justify-content: space-between; gap: 12px; margin-bottom: 12px; color: var(--ink); font-size: 0.86rem; }}
       .event-legend-heading span {{ color: var(--muted); font-weight: 600; }}
@@ -1602,12 +1658,13 @@ def render_html(
       table {{ width: 100%; min-width: 580px; border-collapse: collapse; font-size: 0.8rem; }}
       th, td {{ padding: 9px 8px; border-bottom: 1px solid #e6e1d7; text-align: left; white-space: nowrap; }}
       th {{ color: var(--muted); font-weight: 800; }}
-      a {{ color: #0b745e; }}
-      code {{ color: #365268; font-size: 0.78rem; }}
+      a {{ color: #138a70; }}
+      code {{ color: #627487; font-size: 0.78rem; }}
       @media (max-width: 720px) {{
         main {{ padding: 14px 12px 36px; }}
         .hero {{ border-radius: 22px; padding: 28px 22px; }}
-        .metric-grid, .signal-strip, .details-grid, .route-grid, .event-list {{ grid-template-columns: 1fr; }}
+        .metric-grid, .signal-strip, .details-grid, .route-grid, .route-summary-grid, .event-list {{ grid-template-columns: 1fr; }}
+        .personal-route-head {{ align-items: start; flex-direction: column; gap: 5px; }}
         .event-legend-heading {{ align-items: start; flex-direction: column; gap: 3px; }}
         .section {{ padding: 18px; border-radius: 18px; }}
         .section-head {{ align-items: start; flex-direction: column; gap: 5px; }}
@@ -1630,7 +1687,7 @@ def render_html(
       <input class="tab-input" type="radio" name="dashboard-view" id="route-tab">
       <div class="tabs" role="tablist" aria-label="Report view">
         <label class="tab-label" for="global-tab" role="tab">Network evidence</label>
-        <label class="tab-label" for="route-tab" role="tab">My route: S25 + S26</label>
+        <label class="tab-label" for="route-tab" role="tab">My route: Anhalter ↔ Teltow</label>
       </div>
 
       <div class="tab-content">
@@ -1721,10 +1778,23 @@ def render_html(
       </div>
 
       <div class="tab-panel route-panel">
+        <section class="personal-route" aria-label="Personal commute summary">
+          <div class="personal-route-head">
+            <div><span class="section-index">Your weekly rhythm</span><h2>Anhalter Bahnhof ↔ Teltow Stadt</h2><p>Three round trips each week on the S25/S26 corridor.</p></div>
+            <span class="window-pill">{personal_route.weeks_per_year} weeks/year</span>
+          </div>
+          <div class="route-summary-grid">
+            <div class="route-summary"><span class="route-summary-label">Distance / year</span><strong>{personal_route.annual_distance_km:,.0f} km</strong></div>
+            <div class="route-summary"><span class="route-summary-label">Earth circumference</span><strong>{personal_route.earth_circumference_percentage:.1f}%</strong></div>
+            <div class="route-summary"><span class="route-summary-label">In S-Bahn / year</span><strong>{personal_route.annual_travel_hours:,.0f} hours</strong></div>
+            <div class="route-summary"><span class="route-summary-label">Share of your week</span><strong>{personal_route.week_percentage:.1f}%</strong></div>
+          </div>
+          <p class="route-assumption">Estimate: {personal_route.one_way_distance_km:.1f} km and {personal_route.one_way_minutes} minutes per one-way journey, {personal_route.round_trips_per_week} round trips/week, {personal_route.weeks_per_year} weeks/year. That is {personal_route.weekly_travel_hours:.1f} hours inside the train each week, based on a 168-hour week.</p>
+        </section>
         <section class="section">
           <div class="section-head">
             <div class="section-title"><span class="section-index">Personal view</span><h2>Personal route deep dive</h2></div>
-            <span class="section-note">S25 and S26 line-level KPIs</span>
+            <span class="section-note">How the lines serving your route performed</span>
           </div>
           <p class="chart-note">These lines make the network-level divergence tangible: S25 maintained train-km delivery while punctuality fell; S26 increased reliability from a much lower starting point. The secondary overall score adds context but does not replace the primary KPIs.</p>
           <div class="chart-frame">{route_svg}</div>
@@ -1841,8 +1911,8 @@ STANDALONE_SVG_STYLE_RULES = (
             "stroke-width": "3",
         },
     ),
-    (("annual-punctuality",), {"stroke": "#0f766e"}),
-    (("annual-reliability",), {"stroke": "#1d4ed8"}),
+    (("annual-punctuality",), {"stroke": "#138a70"}),
+    (("annual-reliability",), {"stroke": "#102a43"}),
     (("annual-ytd",), {"stroke-dasharray": "7 6"}),
     (
         ("route-network",),
@@ -1872,11 +1942,11 @@ STANDALONE_SVG_STYLE_RULES = (
         },
     ),
     (("route-network",), {"stroke": "#627487", "stroke-dasharray": "7 6"}),
-    (("route-s25",), {"stroke": "#d6654b"}),
+    (("route-s25",), {"stroke": "#102a43"}),
     (("route-s26",), {"stroke": "#138a70"}),
     (("route-point",), {"stroke": "#fbfaf6", "stroke-width": "2"}),
     (("route-point", "route-network"), {"fill": "#fbfaf6"}),
-    (("route-point", "route-s25"), {"fill": "#d6654b"}),
+    (("route-point", "route-s25"), {"fill": "#102a43"}),
     (("route-point", "route-s26"), {"fill": "#138a70"}),
 )
 

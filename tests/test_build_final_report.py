@@ -8,6 +8,7 @@ from build_final_report import (  # noqa: E402
     build_event_legend,
     build_line_deltas,
     build_line_comparison_svg,
+    build_personal_route_metrics,
     build_report_summary,
     build_network_svg,
     build_route_comparison_svg,
@@ -54,6 +55,17 @@ def test_build_report_summary_captures_mixed_headline_conclusion() -> None:
     }
     assert ytd_values[("punctuality_p3", "2026 YTD (Jan-May)")] == 94.14
     assert ytd_values[("reliability_zg", "2026 YTD (Jan-May)")] == 94.99
+
+
+def test_personal_route_metrics_are_auditable() -> None:
+    metrics = build_personal_route_metrics()
+
+    assert metrics.one_way_journeys_per_year == 276
+    assert round(metrics.annual_distance_km, 1) == 3946.8
+    assert round(metrics.annual_travel_hours, 1) == 124.2
+    assert round(metrics.weekly_travel_hours, 1) == 2.7
+    assert round(metrics.week_percentage, 1) == 1.6
+    assert round(metrics.earth_circumference_percentage, 1) == 9.8
 
 
 def test_full_history_surfaces_diverging_network_and_personal_route_signals() -> None:
@@ -148,6 +160,13 @@ def test_render_html_is_offline_svg_first_and_surfaces_full_window() -> None:
     assert "2026 has 5 observed months" in html
     assert 'aria-labelledby="network-chart-title network-chart-desc"' in html
     assert "Personal route deep dive" in html
+    assert "Anhalter Bahnhof" in html
+    assert "Teltow Stadt" in html
+    assert "3 round trips/week" in html
+    assert "3,947 km" in html
+    assert "9.8%" in html
+    assert "124 hours" in html
+    assert "1.6%" in html
     assert "S25" in html
     assert "S26" in html
     assert "External check" not in html
@@ -169,7 +188,7 @@ def test_standalone_svg_uses_inline_presentation_attributes() -> None:
 
     assert "<style>" not in svg
     assert "class=" not in svg
-    assert 'style="fill: none; stroke: #0f766e;' in svg
+    assert 'style="fill: none; stroke: #138a70;' in svg
     assert 'xmlns="http://www.w3.org/2000/svg"' in svg
     assert 'width="1080" height="410"' in svg
     assert svg.startswith('<?xml version="1.0" encoding="UTF-8"?>')
