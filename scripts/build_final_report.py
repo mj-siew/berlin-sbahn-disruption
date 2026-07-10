@@ -4,6 +4,7 @@ import argparse
 import csv
 import json
 import math
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from html import escape
 from pathlib import Path
@@ -1762,45 +1763,210 @@ def write_text(path: Path, contents: str) -> None:
     path.write_text(contents, encoding="utf-8")
 
 
-STANDALONE_SVG_STYLE = """
-.svg-kicker { fill: #138a70; font: 800 11px Aptos, Segoe UI, sans-serif; letter-spacing: 1.5px; }
-.svg-legend, .svg-caption { fill: #627487; font: 600 12px Aptos, Segoe UI, sans-serif; }
-.svg-panel-title { fill: #102a43; font: 800 17px Aptos, Segoe UI, sans-serif; }
-.svg-axis, .svg-year, .svg-axis-label { fill: #627487; font: 600 11px Aptos, Segoe UI, sans-serif; }
-.svg-year { fill: #102a43; font-size: 12px; font-weight: 800; }
-.svg-axis-label { fill: #102a43; font-size: 12px; }
-.grid-line { stroke: #e8e3d8; stroke-width: 1; }
-.annual-punctuality, .annual-reliability { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }
-.annual-punctuality { stroke: #0f766e; }
-.annual-reliability { stroke: #1d4ed8; }
-.annual-ytd { stroke-dasharray: 7 6; }
-.route-network, .route-s25, .route-s26 { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }
-.route-network { stroke: #627487; stroke-dasharray: 7 6; }
-.route-s25 { stroke: #d6654b; }
-.route-s26 { stroke: #138a70; }
-.route-point { stroke: #fbfaf6; stroke-width: 2; }
-.route-point.route-network { fill: #fbfaf6; }
-.route-point.route-s25 { fill: #d6654b; }
-.route-point.route-s26 { fill: #138a70; }
-"""
+SVG_NAMESPACE = "http://www.w3.org/2000/svg"
+DEFAULT_STANDALONE_SVG_WIDTH = "1080"
+DEFAULT_STANDALONE_SVG_HEIGHT = "410"
+STYLE_PROPERTY_ORDER = (
+    "fill",
+    "stroke",
+    "stroke-width",
+    "stroke-linecap",
+    "stroke-linejoin",
+    "stroke-dasharray",
+    "font",
+    "font-size",
+    "font-weight",
+    "letter-spacing",
+)
+STANDALONE_SVG_STYLE_RULES = (
+    (
+        ("svg-kicker",),
+        {
+            "fill": "#138a70",
+            "font": "800 11px Aptos, Segoe UI, sans-serif",
+            "letter-spacing": "1.5px",
+        },
+    ),
+    (
+        ("svg-legend",),
+        {"fill": "#627487", "font": "600 12px Aptos, Segoe UI, sans-serif"},
+    ),
+    (
+        ("svg-caption",),
+        {"fill": "#627487", "font": "600 12px Aptos, Segoe UI, sans-serif"},
+    ),
+    (
+        ("svg-panel-title",),
+        {"fill": "#102a43", "font": "800 17px Aptos, Segoe UI, sans-serif"},
+    ),
+    (
+        ("svg-axis",),
+        {"fill": "#627487", "font": "600 11px Aptos, Segoe UI, sans-serif"},
+    ),
+    (
+        ("svg-year",),
+        {"fill": "#627487", "font": "600 11px Aptos, Segoe UI, sans-serif"},
+    ),
+    (
+        ("svg-axis-label",),
+        {"fill": "#627487", "font": "600 11px Aptos, Segoe UI, sans-serif"},
+    ),
+    (
+        ("svg-year",),
+        {"fill": "#102a43", "font-size": "12px", "font-weight": "800"},
+    ),
+    (
+        ("svg-axis-label",),
+        {"fill": "#102a43", "font-size": "12px"},
+    ),
+    (
+        ("grid-line",),
+        {"stroke": "#e8e3d8", "stroke-width": "1"},
+    ),
+    (
+        ("annual-punctuality",),
+        {
+            "fill": "none",
+            "stroke-linecap": "round",
+            "stroke-linejoin": "round",
+            "stroke-width": "3",
+        },
+    ),
+    (
+        ("annual-reliability",),
+        {
+            "fill": "none",
+            "stroke-linecap": "round",
+            "stroke-linejoin": "round",
+            "stroke-width": "3",
+        },
+    ),
+    (("annual-punctuality",), {"stroke": "#0f766e"}),
+    (("annual-reliability",), {"stroke": "#1d4ed8"}),
+    (("annual-ytd",), {"stroke-dasharray": "7 6"}),
+    (
+        ("route-network",),
+        {
+            "fill": "none",
+            "stroke-linecap": "round",
+            "stroke-linejoin": "round",
+            "stroke-width": "3",
+        },
+    ),
+    (
+        ("route-s25",),
+        {
+            "fill": "none",
+            "stroke-linecap": "round",
+            "stroke-linejoin": "round",
+            "stroke-width": "3",
+        },
+    ),
+    (
+        ("route-s26",),
+        {
+            "fill": "none",
+            "stroke-linecap": "round",
+            "stroke-linejoin": "round",
+            "stroke-width": "3",
+        },
+    ),
+    (("route-network",), {"stroke": "#627487", "stroke-dasharray": "7 6"}),
+    (("route-s25",), {"stroke": "#d6654b"}),
+    (("route-s26",), {"stroke": "#138a70"}),
+    (("route-point",), {"stroke": "#fbfaf6", "stroke-width": "2"}),
+    (("route-point", "route-network"), {"fill": "#fbfaf6"}),
+    (("route-point", "route-s25"), {"fill": "#d6654b"}),
+    (("route-point", "route-s26"), {"fill": "#138a70"}),
+)
+
+
+ET.register_namespace("", SVG_NAMESPACE)
+
+
+def _ensure_svg_namespace(svg: str) -> str:
+    tag_start = svg.find("<svg")
+    if tag_start == -1:
+        raise ValueError("Standalone SVG input must contain an <svg> element")
+    tag_end = svg.find(">", tag_start)
+    opening_tag = svg[tag_start:tag_end]
+    if "xmlns=" in opening_tag:
+        return svg
+    if opening_tag == "<svg":
+        return f'{svg[:tag_start]}<svg xmlns="{SVG_NAMESPACE}"{svg[tag_end:]}'
+    return f'{svg[:tag_start]}<svg xmlns="{SVG_NAMESPACE}"{svg[tag_start + len("<svg"):]}'
+
+
+def _format_svg_dimension(value: float) -> str:
+    return str(int(value)) if value.is_integer() else f"{value:g}"
+
+
+def _standalone_dimensions(root: ET.Element) -> tuple[str, str]:
+    view_box = root.attrib.get("viewBox")
+    if view_box:
+        parts = view_box.replace(",", " ").split()
+        if len(parts) == 4:
+            return (
+                _format_svg_dimension(float(parts[2])),
+                _format_svg_dimension(float(parts[3])),
+            )
+    return DEFAULT_STANDALONE_SVG_WIDTH, DEFAULT_STANDALONE_SVG_HEIGHT
+
+
+def _parse_style_attribute(style: str | None) -> dict[str, str]:
+    if not style:
+        return {}
+    declarations: dict[str, str] = {}
+    for declaration in style.split(";"):
+        if ":" not in declaration:
+            continue
+        property_name, value = declaration.split(":", 1)
+        declarations[property_name.strip()] = value.strip()
+    return declarations
+
+
+def _style_for_classes(classes: set[str]) -> dict[str, str]:
+    declarations: dict[str, str] = {}
+    for required_classes, rule_declarations in STANDALONE_SVG_STYLE_RULES:
+        if all(required_class in classes for required_class in required_classes):
+            declarations.update(rule_declarations)
+    return declarations
+
+
+def _style_attribute(declarations: dict[str, str]) -> str:
+    ordered_properties = [
+        property_name
+        for property_name in STYLE_PROPERTY_ORDER
+        if property_name in declarations
+    ]
+    ordered_properties.extend(
+        property_name
+        for property_name in declarations
+        if property_name not in ordered_properties
+    )
+    return "; ".join(
+        f"{property_name}: {declarations[property_name]}"
+        for property_name in ordered_properties
+    ) + ";"
 
 
 def standalone_svg(svg: str) -> str:
-    """Embed the small stylesheet needed when a report chart is viewed alone."""
-    if svg.startswith("<svg>"):
-        svg = svg.replace(
-            "<svg>",
-            '<svg xmlns="http://www.w3.org/2000/svg">',
-            1,
-        )
-    else:
-        svg = svg.replace(
-            "<svg ",
-            '<svg xmlns="http://www.w3.org/2000/svg" ',
-            1,
-        )
-    svg = svg.replace("</svg>", f"<style>{STANDALONE_SVG_STYLE}</style></svg>")
-    return f'<?xml version="1.0" encoding="UTF-8"?>\n{svg}'
+    """Make a generated report chart self-contained for README rendering."""
+    root = ET.fromstring(_ensure_svg_namespace(svg))
+    width, height = _standalone_dimensions(root)
+    root.attrib.setdefault("width", width)
+    root.attrib.setdefault("height", height)
+    root.attrib.setdefault("viewBox", f"0 0 {width} {height}")
+
+    for element in root.iter():
+        classes = set(element.attrib.pop("class", "").split())
+        declarations = _style_for_classes(classes)
+        declarations.update(_parse_style_attribute(element.attrib.get("style")))
+        if declarations:
+            element.attrib["style"] = _style_attribute(declarations)
+
+    svg_body = ET.tostring(root, encoding="unicode", short_empty_elements=True)
+    return f'<?xml version="1.0" encoding="UTF-8"?>\n{svg_body}'
 
 
 def parse_args() -> argparse.Namespace:

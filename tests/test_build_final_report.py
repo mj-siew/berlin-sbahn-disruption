@@ -164,10 +164,12 @@ def test_event_legend_exposes_loaded_context_without_hovering_chart_markers() ->
     assert "Wollankstrasse full closure" in legend
 
 
-def test_standalone_svg_embeds_its_chart_styles() -> None:
+def test_standalone_svg_uses_inline_presentation_attributes() -> None:
     svg = standalone_svg("<svg><path class='annual-punctuality'/></svg>")
 
-    assert "<style>" in svg
-    assert ".annual-punctuality" in svg
+    assert "<style>" not in svg
+    assert "class=" not in svg
+    assert 'style="fill: none; stroke: #0f766e;' in svg
     assert 'xmlns="http://www.w3.org/2000/svg"' in svg
+    assert 'width="1080" height="410"' in svg
     assert svg.startswith('<?xml version="1.0" encoding="UTF-8"?>')
