@@ -34,7 +34,7 @@ PERSONAL_ROUTE_TRAVEL_MINUTES = 27
 PERSONAL_ROUTE_ROUND_TRIPS_PER_WEEK = 3
 PERSONAL_ROUTE_WEEKS_PER_YEAR = 46
 PERSONAL_ROUTE_WEEK_HOURS = 168
-EARTH_CIRCUMFERENCE_KM = 40_075
+PERSONAL_ROUTE_DISTANCE_COMPARISON = "≈ one Berlin–Madrid return journey"
 
 METRIC_LABELS = {
     "punctuality_p3": "Punctuality <= 3:59 late",
@@ -157,7 +157,7 @@ class PersonalRouteMetrics:
     annual_travel_hours: float
     weekly_travel_hours: float
     week_percentage: float
-    earth_circumference_percentage: float
+    distance_comparison: str
 
 
 def build_personal_route_metrics(
@@ -167,7 +167,6 @@ def build_personal_route_metrics(
     round_trips_per_week: int = PERSONAL_ROUTE_ROUND_TRIPS_PER_WEEK,
     weeks_per_year: int = PERSONAL_ROUTE_WEEKS_PER_YEAR,
     week_hours: int = PERSONAL_ROUTE_WEEK_HOURS,
-    earth_circumference_km: int = EARTH_CIRCUMFERENCE_KM,
 ) -> PersonalRouteMetrics:
     one_way_journeys_per_year = 2 * round_trips_per_week * weeks_per_year
     annual_distance_km = one_way_distance_km * one_way_journeys_per_year
@@ -183,7 +182,7 @@ def build_personal_route_metrics(
         annual_travel_hours=annual_travel_hours,
         weekly_travel_hours=weekly_travel_hours,
         week_percentage=weekly_travel_hours / week_hours * 100,
-        earth_circumference_percentage=annual_distance_km / earth_circumference_km * 100,
+        distance_comparison=PERSONAL_ROUTE_DISTANCE_COMPARISON,
     )
 
 
@@ -1780,21 +1779,21 @@ def render_html(
       <div class="tab-panel route-panel">
         <section class="personal-route" aria-label="Personal commute summary">
           <div class="personal-route-head">
-            <div><span class="section-index">Your weekly rhythm</span><h2>Anhalter Bahnhof ↔ Teltow Stadt</h2><p>Three round trips each week on the S25/S26 corridor.</p></div>
+            <div><span class="section-index">Weekly rhythm</span><h2>Anhalter Bahnhof ↔ Teltow Stadt</h2><p>Three round trips each week on the S25/S26 corridor.</p></div>
             <span class="window-pill">{personal_route.weeks_per_year} weeks/year</span>
           </div>
           <div class="route-summary-grid">
             <div class="route-summary"><span class="route-summary-label">Distance / year</span><strong>{personal_route.annual_distance_km:,.0f} km</strong></div>
-            <div class="route-summary"><span class="route-summary-label">Earth circumference</span><strong>{personal_route.earth_circumference_percentage:.1f}%</strong></div>
+            <div class="route-summary"><span class="route-summary-label">Distance comparison</span><strong>{escape(personal_route.distance_comparison)}</strong></div>
             <div class="route-summary"><span class="route-summary-label">In S-Bahn / year</span><strong>{personal_route.annual_travel_hours:,.0f} hours</strong></div>
-            <div class="route-summary"><span class="route-summary-label">Share of your week</span><strong>{personal_route.week_percentage:.1f}%</strong></div>
+            <div class="route-summary"><span class="route-summary-label">Share of week</span><strong>{personal_route.week_percentage:.1f}%</strong></div>
           </div>
           <p class="route-assumption">Estimate: {personal_route.one_way_distance_km:.1f} km and {personal_route.one_way_minutes} minutes per one-way journey, {personal_route.round_trips_per_week} round trips/week, {personal_route.weeks_per_year} weeks/year. That is {personal_route.weekly_travel_hours:.1f} hours inside the train each week, based on a 168-hour week.</p>
         </section>
         <section class="section">
           <div class="section-head">
             <div class="section-title"><span class="section-index">Personal view</span><h2>Personal route deep dive</h2></div>
-            <span class="section-note">How the lines serving your route performed</span>
+            <span class="section-note">How the lines serving the route performed</span>
           </div>
           <p class="chart-note">These lines make the network-level divergence tangible: S25 maintained train-km delivery while punctuality fell; S26 increased reliability from a much lower starting point. The secondary overall score adds context but does not replace the primary KPIs.</p>
           <div class="chart-frame">{route_svg}</div>

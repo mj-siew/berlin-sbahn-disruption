@@ -65,7 +65,7 @@ def test_personal_route_metrics_are_auditable() -> None:
     assert round(metrics.annual_travel_hours, 1) == 124.2
     assert round(metrics.weekly_travel_hours, 1) == 2.7
     assert round(metrics.week_percentage, 1) == 1.6
-    assert round(metrics.earth_circumference_percentage, 1) == 9.8
+    assert metrics.distance_comparison == "≈ one Berlin–Madrid return journey"
 
 
 def test_full_history_surfaces_diverging_network_and_personal_route_signals() -> None:
@@ -164,9 +164,12 @@ def test_render_html_is_offline_svg_first_and_surfaces_full_window() -> None:
     assert "Teltow Stadt" in html
     assert "3 round trips/week" in html
     assert "3,947 km" in html
-    assert "9.8%" in html
+    assert "one Berlin–Madrid return journey" in html
     assert "124 hours" in html
     assert "1.6%" in html
+    assert "Your weekly rhythm" not in html
+    assert "Share of your week" not in html
+    assert "serving your route" not in html
     assert "S25" in html
     assert "S26" in html
     assert "External check" not in html
